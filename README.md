@@ -1,8 +1,15 @@
 # Boggrt
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Boggrt is a mock API server that serves responses based on configurable endpoints and conditions.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Features
+
+- Configure multiple mock API endpoints.
+- Define specific conditions for incoming requests (method, path, body fields).
+- Supports JSONPath-like syntax for request validation.
+- Returns configured mock responses when conditions are met, otherwise returns 404.
+
+For detailed configuration options, see [Configuration Specification](spec.md).
 
 ## Running the application in dev mode
 

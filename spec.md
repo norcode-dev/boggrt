@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document defines the specification for configuring mock API endpoints that are served by the Boggrt mock server. Each endpoint configuration defines an HTTP route with an optional set of conditions that must be satisfied by incoming requests. If all conditions are met, the mock server returns the configured response. If any condition fails, the server returns a **404 Not Found** status.
+This document defines the specification for configuring mock API endpoints that are served by the Boggrt mock server. Each configuration entry describes a mock API that the server will host. An endpoint configuration defines an HTTP route with an optional set of conditions that must be satisfied by the incoming request. 
+
+The mock API will be returned **only if all specified conditions are met by the request**. If any condition fails, or if the request does not match any configured path and method, the server returns a **404 Not Found** status.
 
 ## Configuration Format
 
@@ -40,16 +42,18 @@ Endpoint configurations are defined in JSON format. The configuration supports b
 
 ### Root Configuration Object
 
+The root configuration object defines the mock API to be served.
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `method` | String | Yes | HTTP method (GET, POST, PUT, DELETE, etc.) |
-| `path` | String | Yes | URL path for the endpoint |
-| `conditions` | Array | No | Array of condition objects to validate incoming request data. All conditions must be met for the response to be returned; otherwise, a 404 is returned |
-| `response` | Object | Yes | The mock response object to return when all conditions are satisfied |
+| `method` | String | Yes | HTTP method (GET, POST, PUT, DELETE, etc.) that the mock API will respond to |
+| `path` | String | Yes | URL path where the mock API will be served |
+| `conditions` | Array | No | Array of condition objects to validate the incoming request. All conditions must be met for the response to be returned; otherwise, a 404 is returned |
+| `response` | Object | Yes | The mock response data to return when the request matches the method/path and all conditions are satisfied |
 
 ### Condition Object
 
-Conditions allow validation of incoming request data using various operators. Each condition evaluates a field from the incoming request against a specified operator and optional value. **All conditions must be satisfied for the mock response to be returned. If any condition fails, the server returns HTTP 404.**
+Conditions define requirements for the incoming request. Each condition evaluates a field from the request against a specified operator and optional value. **All conditions must be satisfied for the mock response to be returned. If any condition fails to match the request, the server returns HTTP 404.**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -238,17 +242,19 @@ This example defines a `GET /hello1` endpoint that only returns the mock respons
 
 ## Validation Rules
 
-1. **Method**: Must be a valid HTTP method string
-2. **Path**: Must start with `/` and define a unique endpoint path
-3. **Conditions**: Optional array; if present, all conditions must pass for the response to be valid
-4. **Response**: Can be any valid JSON object or primitive value
-5. **Field Paths**: Must reference valid paths within the response object
+1. **Method**: Must be a valid HTTP method string for the mock API to serve
+2. **Path**: Must start with `/` and define a unique endpoint path for the mock API
+3. **Conditions**: Optional array; if present, all conditions must be satisfied by the incoming request for the mock response to be returned
+4. **Response**: Can be any valid JSON object or primitive value; defines the data returned by the mock API
+5. **Field Paths**: Must reference valid paths within the incoming request object (starting with `request.`)
 6. **Operators**: Must be one of the supported operators listed above
 7. **Values**: Required for operators that perform comparisons (`equals`, `contains`, `lengthGreaterThan`)
 
 ## Notes
 
-- Conditions with array wildcards (`[*]`) apply the validation to all elements in the array
-- Empty conditions arrays are allowed and will be treated as no conditions
-- All conditions must be satisfied for the validation to pass
-- The `response` object defines the actual data returned by the endpoint
+- The configuration specifies which mock APIs to serve and under what conditions.
+- Conditions with array wildcards (`[*]`) apply the validation to all elements in the request array
+- Empty conditions arrays are allowed and will be treated as no conditions (mock will always be returned for matching method/path)
+- All conditions must be satisfied by the incoming request for the validation to pass
+- If conditions are not met, the mock server returns HTTP 404
+- The `response` object defines the actual data returned by the mock API when all criteria are met
