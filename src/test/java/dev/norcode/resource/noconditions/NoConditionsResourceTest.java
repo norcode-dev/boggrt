@@ -29,11 +29,11 @@ class NoConditionsResourceTest {
     }
 
     @Test
-    void testHello2Endpoint() {
+    void testHello2EndpointUsesConfiguredResponseStatus() {
         given()
           .when().get("/hello2")
           .then()
-             .statusCode(200)
+             .statusCode(201)
                 .contentType("application/json")
                 .body("firstName", is("John"))
                 .body("lastName", is("Doe"))
@@ -46,7 +46,7 @@ class NoConditionsResourceTest {
     }
 
     @Test
-    void testHello3Endpoint() {
+    void testHello3EndpointDefaultsToStatus200WhenResponseStatusMissing() {
         given()
                 .when().get("/hello3")
                 .then()

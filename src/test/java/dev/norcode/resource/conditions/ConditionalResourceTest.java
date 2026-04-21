@@ -11,7 +11,7 @@ import static org.hamcrest.CoreMatchers.is;
 @TestProfile(ConditionEndpointsTestProfile.class)
 class ConditionalResourceTest {
   @Test
-  void testOrdersValidateReturnsConfiguredResponseWhenAllConditionsMatch() {
+  void testOrdersValidateUsesConfiguredResponseStatusWhenAllConditionsMatch() {
     given()
         .contentType("application/json")
         .body(
@@ -26,7 +26,7 @@ class ConditionalResourceTest {
         .when()
         .post("/orders/validate")
         .then()
-        .statusCode(200)
+        .statusCode(202)
         .contentType("application/json")
         .body("status", is("accepted"))
         .body("code", is("MOCK-OK"));
@@ -65,7 +65,7 @@ class ConditionalResourceTest {
   }
 
   @Test
-  void testNumbersRangeReturnsConfiguredResponseForValidAmount() {
+  void testNumbersRangeDefaultsToStatus200WhenResponseStatusMissing() {
     given()
         .contentType("application/json")
         .body(

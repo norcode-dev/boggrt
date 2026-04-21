@@ -2,6 +2,7 @@
   {
     "method": "GET",
     "path": "/hello2",
+    "responseStatus": 201,
     "response": {
       "firstName": "John",
       "lastName": "Doe",

@@ -2,6 +2,7 @@
   {
     "method": "POST",
     "path": "/orders/validate",
+    "responseStatus": 202,
     "conditions": [
       {
         "field": "customer.lastName",
