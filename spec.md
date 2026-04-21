@@ -62,7 +62,7 @@ For each incoming request:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `method` | String | Yes | Must be a valid Vert.x `HttpMethod` (for example `GET`, `POST`, `PUT`, `DELETE`). Use uppercase. |
+| `method` | String | Yes | Must be a valid `HttpMethod` (for example `GET`, `POST`, `PUT`, `DELETE`). Use uppercase. |
 | `path` | String | Yes | Route path to match (for example `/orders/validate`). |
 | `conditions` | Array\<Condition\> | No | If missing or empty, no condition checks are performed. |
 | `responseStatus` | Number | No | Status code returned when endpoint matches and conditions pass. Defaults to `200` when omitted. |
