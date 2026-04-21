@@ -22,7 +22,7 @@ public class FileLoader implements ConfigurationLoader {
 
   @Override
   public Set<Path> get() {
-    log.info("Loading endpoint configuration from {}", appConfiguration.endpointsFolderPath());
+    log.info("Loading endpoint configurations from {}", appConfiguration.endpointsFolderPath());
 
     try (Stream<Path> stream = Files.list(Paths.get(appConfiguration.endpointsFolderPath()))) {
       return stream
