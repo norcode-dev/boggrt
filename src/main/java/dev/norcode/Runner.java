@@ -26,7 +26,7 @@ public class Runner {
     this.routerConfiguration = routerConfiguration;
   }
 
-  void installRoute(@Observes StartupEvent startupEvent) {
+  void installRoutes(@Observes StartupEvent startupEvent) {
 
     log.info("Installing routes");
     Set<Path> paths = configurationLoader.get();
@@ -34,7 +34,7 @@ public class Runner {
 
     if (endpointConfiguration.isEmpty()) {
       log.error("No endpoint configuration found");
-      //TODO throw exception when no endpoint configuration is found
+      // TODO throw exception when no endpoint configuration is found
     }
 
     log.info("Found {} endpoint configuration(s)", endpointConfiguration.size());
