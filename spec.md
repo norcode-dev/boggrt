@@ -88,14 +88,14 @@ Applies the condition to the `title` property of **all** elements in the `option
 ### Equality Operators
 
 #### `equals`
-Checks if the field value equals the specified value.
+Checks if the field value equals the specified value. Works for strings, numbers, and booleans.
 
 **Example:**
 ```json
 {
   "field": "request.lastName",
   "operator": "equals",
-  "value": "Luis"
+  "value": "Doe"
 }
 ```
 This condition checks if the incoming request body contains `lastName` equal to "Luis".
@@ -103,22 +103,47 @@ This condition checks if the incoming request body contains `lastName` equal to 
 ### String Operators
 
 #### `contains`
-Checks if the field value (string or array) contains the specified value.
+Checks if the field value (string) contains the specified value.
 
 **Example:**
 ```json
 {
-  "field": "request.options[*].title",
+  "field": "request.lastName",
   "operator": "contains",
-  "value": "ABC"
+  "value": "Doe"
 }
 ```
-When used with arrays and wildcards, checks if any element in the request contains the value.
 
-### Collection Operators
+### Numeric Operators
+
+#### `greaterThan`
+Checks if the field value (number) is greater than the specified value.
+
+**Example:**
+```json
+{
+  "field": "request.age",
+  "operator": "greaterThan",
+  "value": 21
+}
+```
+
+#### `lessThan`
+Checks if the field value (number) is less than the specified value.
+
+**Example:**
+```json
+{
+  "field": "request.age",
+  "operator": "lessThan",
+  "value": 65
+}
+```
+
+### Collection and String Length Operators
 
 #### `isEmpty`
-Checks if the field (array or string) is empty in the incoming request.
+Checks if the field (array or string) is empty.
 
 **Example:**
 ```json
@@ -128,15 +153,52 @@ Checks if the field (array or string) is empty in the incoming request.
 }
 ```
 
-#### `lengthGreaterThan`
-Checks if the length of the field (array or string) in the incoming request is greater than the specified value.
+#### `sizeEquals`
+Checks if the size of an array or length of a string equals the specified value.
 
 **Example:**
 ```json
 {
   "field": "request.options",
-  "operator": "lengthGreaterThan",
+  "operator": "sizeEquals",
+  "value": 3
+}
+```
+
+#### `sizeGreaterThan`
+Checks if the size of an array or length of a string is greater than the specified value.
+
+**Example:**
+```json
+{
+  "field": "request.options",
+  "operator": "sizeGreaterThan",
   "value": 5
+}
+```
+
+#### `sizeLessThan`
+Checks if the size of an array or length of a string is less than the specified value.
+
+**Example:**
+```json
+{
+  "field": "request.options",
+  "operator": "sizeLessThan",
+  "value": 10
+}
+```
+
+### Existence Operators
+
+#### `exists`
+Checks if a field exists in the request.
+
+**Example:**
+```json
+{
+  "field": "request.optionalField",
+  "operator": "exists"
 }
 ```
 
@@ -162,7 +224,7 @@ This example defines a `GET /hello1` endpoint that only returns the mock respons
     },
     {
       "field": "request.options",
-      "operator": "lengthGreaterThan",
+      "operator": "sizeGreaterThan",
       "value": 5
     },
     {
@@ -248,7 +310,7 @@ This example defines a `GET /hello1` endpoint that only returns the mock respons
 4. **Response**: Can be any valid JSON object or primitive value; defines the data returned by the mock API
 5. **Field Paths**: Must reference valid paths within the incoming request object (starting with `request.`)
 6. **Operators**: Must be one of the supported operators listed above
-7. **Values**: Required for operators that perform comparisons (`equals`, `contains`, `lengthGreaterThan`)
+7. **Values**: Required for operators that perform comparisons (`equals`, `contains`, `greaterThan`, `lessThan`, `sizeEquals`, `sizeGreaterThan`, `sizeLessThan`)
 
 ## Notes
 
