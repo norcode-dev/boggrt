@@ -8,7 +8,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
 
 @QuarkusTest
-class GreetingResourceTest {
+class BasicResourceTest {
     @Test
     void testHello2Endpoint() {
         given()
