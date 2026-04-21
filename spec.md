@@ -1,272 +1,219 @@
 # Boggrt Configuration Specification
 
-## Overview
+## 1. Purpose
 
-This document defines the specification for configuring mock API endpoints that are served by the Boggrt mock server. Each configuration entry describes a mock API that the server will host. An endpoint configuration defines an HTTP route with an optional set of conditions that must be satisfied by the incoming request. 
+This document explains how Boggrt reads endpoint configurations and how requests are matched at runtime.
 
-The mock API will be returned **only if all specified conditions are met by the request**. If any condition fails, or if the request does not match any configured path and method, the server returns a **404 Not Found** status.
+Boggrt serves a configured response when:
 
-## Configuration Format
+1. HTTP method and path match a configured endpoint.
+2. All endpoint conditions pass (if conditions are configured).
 
-Endpoint configurations are defined in JSON format. The configuration supports both single endpoint objects and arrays of endpoint objects.
+If no endpoint matches, or any condition fails, Boggrt returns `404 Not Found`.
 
-### Single Endpoint Format
+## 2. Where Configuration Is Loaded From
 
-```json
-{
-  "method": "GET",
-  "path": "/hello1",
-  "conditions": [ ... ],
-  "response": { ... }
-}
-```
+Boggrt reads endpoint definitions from `.json` files located in the directory specified by the `boggrt.endpoints-folder-path` Quarkus configuration key.
+- Environment override: `BOGGRT_SOURCE`
+- Default value: `src/main/resources/`
 
-### Multiple Endpoints Format
+Each `.json` file can contain either:
 
-```json
-[
-  {
-    "method": "GET",
-    "path": "/hello2",
-    "response": { ... }
-  },
-  {
-    "method": "GET",
-    "path": "/hello3",
-    "response": { ... }
-  }
-]
-```
+- one endpoint object
+- an array of endpoint objects
 
-## Schema Definition
+## 3. Runtime Matching Flow
 
-### Root Configuration Object
+For each incoming request:
 
-The root configuration object defines the mock API to be served.
+1. Boggrt checks method + path against configured endpoints.
+2. If the endpoint has no conditions (missing or empty array), Boggrt returns the configured response with HTTP `200`.
+3. If conditions exist, Boggrt parses the request body as JSON and evaluates all conditions.
+4. If every condition passes, Boggrt returns HTTP `200` with the configured response.
+5. If any condition fails (or body JSON cannot be parsed), Boggrt returns HTTP `404` with body `Response not found.`
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `method` | String | Yes | HTTP method (GET, POST, PUT, DELETE, etc.) that the mock API will respond to |
-| `path` | String | Yes | URL path where the mock API will be served |
-| `conditions` | Array | No | Array of condition objects to validate the incoming request. All conditions must be met for the response to be returned; otherwise, a 404 is returned |
-| `response` | Object | Yes | The mock response data to return when the request matches the method/path and all conditions are satisfied |
+Successful responses are sent with `Content-Type: application/json`.
 
-### Condition Object
+## 4. Endpoint Schema
 
-Conditions define requirements for the incoming request. Each condition evaluates a field from the request against a specified operator and optional value. **All conditions must be satisfied for the mock response to be returned. If any condition fails to match the request, the server returns HTTP 404.**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `field` | String | Yes | JSON path to the field in the incoming request to validate |
-| `operator` | String | Yes | Validation operator to apply |
-| `value` | Any | No | Value to compare against (required for some operators) |
-
-## Field Path Syntax
-
-The `field` property supports JSONPath-like syntax for accessing nested properties and array elements in the incoming request:
-
-### Simple Property Access
-```json
-"field": "request.lastName"
-```
-Accesses the `lastName` property in the incoming request body.
-
-### Array Element Access
-```json
-"field": "request.options[0].title"
-```
-Accesses the `title` property of the first element in the `options` array from the request body.
-
-### Wildcard Array Access
-```json
-"field": "request.options[*].title"
-```
-Applies the condition to the `title` property of **all** elements in the `options` array from the request body.
-
-## Supported Operators
-
-### Equality Operators
-
-#### `equals`
-Checks if the field value equals the specified value. Works for strings, numbers, and booleans.
-
-**Example:**
-```json
-{
-  "field": "request.lastName",
-  "operator": "equals",
-  "value": "Doe"
-}
-```
-This condition checks if the incoming request body contains `lastName` equal to "Luis".
-
-### String Operators
-
-#### `contains`
-Checks if the field value (string) contains the specified value.
-
-**Example:**
-```json
-{
-  "field": "request.lastName",
-  "operator": "contains",
-  "value": "Doe"
-}
-```
-
-### Numeric Operators
-
-#### `greaterThan`
-Checks if the field value (number) is greater than the specified value.
-
-**Example:**
-```json
-{
-  "field": "request.age",
-  "operator": "greaterThan",
-  "value": 21
-}
-```
-
-#### `lessThan`
-Checks if the field value (number) is less than the specified value.
-
-**Example:**
-```json
-{
-  "field": "request.age",
-  "operator": "lessThan",
-  "value": 65
-}
-```
-
-### Collection and String Length Operators
-
-#### `isEmpty`
-Checks if the field (array or string) is empty.
-
-**Example:**
-```json
-{
-  "field": "request.options",
-  "operator": "isEmpty"
-}
-```
-
-#### `sizeEquals`
-Checks if the size of an array or length of a string equals the specified value.
-
-**Example:**
-```json
-{
-  "field": "request.options",
-  "operator": "sizeEquals",
-  "value": 3
-}
-```
-
-#### `sizeGreaterThan`
-Checks if the size of an array or length of a string is greater than the specified value.
-
-**Example:**
-```json
-{
-  "field": "request.options",
-  "operator": "sizeGreaterThan",
-  "value": 5
-}
-```
-
-#### `sizeLessThan`
-Checks if the size of an array or length of a string is less than the specified value.
-
-**Example:**
-```json
-{
-  "field": "request.options",
-  "operator": "sizeLessThan",
-  "value": 10
-}
-```
-
-### Existence Operators
-
-#### `exists`
-Checks if a field exists in the request.
-
-**Example:**
-```json
-{
-  "field": "request.optionalField",
-  "operator": "exists"
-}
-```
-
-## Complete Examples
-
-### Example 1: Endpoint with Request Conditions
-
-This example defines a `GET /hello1` endpoint that only returns the mock response if all conditions are met in the incoming request. If any condition fails, the server returns HTTP 404.
+### 4.1 Endpoint Object
 
 ```json
 {
-  "method": "GET",
-  "path": "/hello1",
+  "method": "POST",
+  "path": "/orders/validate",
   "conditions": [
     {
-      "field": "request.lastName",
+      "field": "customer.lastName",
       "operator": "equals",
-      "value": "Luis"
-    },
-    {
-      "field": "request.options",
-      "operator": "isEmpty"
-    },
-    {
-      "field": "request.options",
-      "operator": "sizeGreaterThan",
-      "value": 5
-    },
-    {
-      "field": "request.options[*].title",
-      "operator": "equals",
-      "value": "ABC"
-    },
-    {
-      "field": "request.options[0].title",
-      "operator": "equals",
-      "value": "ABC"
-    },
-    {
-      "field": "request.options[*].title",
-      "operator": "contains",
-      "value": "ABC"
+      "value": "Doe"
     }
   ],
   "response": {
-    "firstName": "John",
-    "lastName": "Doe",
-    "age": 30,
-    "options": [
-      {
-        "title": "title 1",
-        "description": "description 1"
-      },
-      {
-        "title": "title 2",
-        "description": "description 2"
-      }
-    ]
+    "status": "accepted"
   }
 }
 ```
 
-**Behavior:**
-- The mock server will evaluate all conditions against the incoming request body
-- Only if ALL conditions pass will it return the configured `response` with HTTP 200
-- If ANY condition fails, it returns HTTP 404
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `method` | String | Yes | Must be a valid Vert.x `HttpMethod` value (for example `GET`, `POST`, `PUT`, `DELETE`). Use uppercase names. |
+| `path` | String | Yes | Route path to match (for example `/orders/validate`). |
+| `conditions` | Array\<Condition\> | No | If missing or empty, no condition checks are performed. |
+| `response` | Any JSON value | Yes | Returned as the response body when endpoint matches. |
 
-### Example 2: Multiple Endpoints
+### 4.2 Condition Object
+
+```json
+{
+  "field": "items[*].sku",
+  "operator": "contains",
+  "value": "SKU-"
+}
+```
+
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `field` | String | Yes | Path expression resolved from the request JSON body root. |
+| `operator` | String | Yes | One of the supported operators (case-insensitive). |
+| `value` | String \| Number \| Boolean | Yes | Required for parsing in all operators, including `exists` and `isEmpty`. |
+
+## 5. Field Path Syntax
+
+Boggrt resolves `field` from the request body root.
+
+- `customer.lastName` -> nested property
+- `items[0].sku` -> indexed array element
+- `items[*].sku` -> wildcard over all array elements
+
+Important:
+
+- `request.` is not a reserved prefix.
+- Use `request.lastName` only if your request JSON really has a top-level `request` field.
+
+Example:
+
+If body is:
+
+```json
+{
+  "lastName": "Doe",
+  "items": [
+    { "sku": "SKU-1" },
+    { "sku": "SKU-2" }
+  ]
+}
+```
+
+then valid fields are:
+
+- `lastName`
+- `items[0].sku`
+- `items[*].sku`
+
+## 6. Operators
+
+All conditions are combined with AND. Every condition must pass.
+
+| Operator | Field Type Expected | Value Type | Passes When |
+|---|---|---|---|
+| `equals` | string, number, boolean | same logical type | Field equals `value` |
+| `contains` | string | string (recommended) | Field contains `value` as substring |
+| `greaterThan` | number | number | Field > `value` |
+| `lessThan` | number | number | Field < `value` |
+| `isEmpty` | array or string | any (required but ignored) | Array length is 0, or string length is 0 |
+| `sizeEquals` | array or string | number | Size/length == `value` |
+| `sizeGreaterThan` | array or string | number | Size/length > `value` |
+| `sizeLessThan` | array or string | number | Size/length < `value` |
+| `exists` | any non-null field | any (required but ignored) | Field path resolves to a non-null value |
+
+Wildcard behavior (`[*]`):
+
+- All resolved elements must satisfy the operator.
+- If wildcard resolves to no elements, the condition fails.
+
+## 7. Practical Examples
+
+### 7.1 Single Endpoint Without Conditions
+
+Configuration:
+
+```json
+{
+  "method": "GET",
+  "path": "/health/mock",
+  "response": {
+    "status": "ok"
+  }
+}
+```
+
+Request:
+
+```bash
+curl -i http://localhost:8080/health/mock
+```
+
+Result:
+
+- HTTP `200`
+- body: `{"status":"ok"}`
+
+### 7.2 Endpoint With Conditions
+
+Configuration:
+
+```json
+{
+  "method": "POST",
+  "path": "/orders/validate",
+  "conditions": [
+    { "field": "customer.lastName", "operator": "equals", "value": "Doe" },
+    { "field": "items", "operator": "sizeGreaterThan", "value": 1 },
+    { "field": "items[*].sku", "operator": "contains", "value": "SKU-" },
+    { "field": "traceId", "operator": "exists", "value": true },
+    { "field": "notes", "operator": "isEmpty", "value": true }
+  ],
+  "response": {
+    "status": "accepted",
+    "code": "MOCK-OK"
+  }
+}
+```
+
+Matching request:
+
+```bash
+curl -i \
+  -X POST http://localhost:8080/orders/validate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": { "lastName": "Doe" },
+    "items": [{ "sku": "SKU-1" }, { "sku": "SKU-2" }],
+    "traceId": "abc-123",
+    "notes": ""
+  }'
+```
+
+Result: HTTP `200` with configured response.
+
+Non-matching request (`items[1].sku` does not contain `SKU-`):
+
+```bash
+curl -i \
+  -X POST http://localhost:8080/orders/validate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": { "lastName": "Doe" },
+    "items": [{ "sku": "SKU-1" }, { "sku": "BAD" }],
+    "traceId": "abc-123",
+    "notes": ""
+  }'
+```
+
+Result: HTTP `404` with `Response not found.`
+
+### 7.3 Multiple Endpoints In One File
 
 ```json
 [
@@ -275,18 +222,7 @@ This example defines a `GET /hello1` endpoint that only returns the mock respons
     "path": "/hello2",
     "response": {
       "firstName": "John",
-      "lastName": "Doe",
-      "age": 30,
-      "options": [
-        {
-          "title": "title 1",
-          "description": "description 1"
-        },
-        {
-          "title": "title 2",
-          "description": "description 2"
-        }
-      ]
+      "lastName": "Doe"
     }
   },
   {
@@ -294,29 +230,8 @@ This example defines a `GET /hello1` endpoint that only returns the mock respons
     "path": "/hello3",
     "response": {
       "firstName": "Jane",
-      "lastName": "Smith",
-      "age": 25,
-      "options": []
+      "lastName": "Smith"
     }
   }
 ]
 ```
-
-## Validation Rules
-
-1. **Method**: Must be a valid HTTP method string for the mock API to serve
-2. **Path**: Must start with `/` and define a unique endpoint path for the mock API
-3. **Conditions**: Optional array; if present, all conditions must be satisfied by the incoming request for the mock response to be returned
-4. **Response**: Can be any valid JSON object or primitive value; defines the data returned by the mock API
-5. **Field Paths**: Must reference valid paths within the incoming request object (starting with `request.`)
-6. **Operators**: Must be one of the supported operators listed above
-7. **Values**: Required for operators that perform comparisons (`equals`, `contains`, `greaterThan`, `lessThan`, `sizeEquals`, `sizeGreaterThan`, `sizeLessThan`)
-
-## Notes
-
-- The configuration specifies which mock APIs to serve and under what conditions.
-- Conditions with array wildcards (`[*]`) apply the validation to all elements in the request array
-- Empty conditions arrays are allowed and will be treated as no conditions (mock will always be returned for matching method/path)
-- All conditions must be satisfied by the incoming request for the validation to pass
-- If conditions are not met, the mock server returns HTTP 404
-- The `response` object defines the actual data returned by the mock API when all criteria are met
