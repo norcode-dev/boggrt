@@ -1,5 +1,8 @@
 package dev.norcode.configuration;
 
+import lombok.Getter;
+
+@Getter
 public enum ConditionOperator {
   EQUALS("equals"),
   CONTAINS("contains"),
@@ -17,13 +20,9 @@ public enum ConditionOperator {
     this.value = value;
   }
 
-  public String getValue() {
-    return value;
-  }
-
   public static ConditionOperator fromValue(String value) {
     for (ConditionOperator operator : ConditionOperator.values()) {
-      if (operator.value.equals(value)) {
+      if (operator.value.equalsIgnoreCase(value)) {
         return operator;
       }
     }
