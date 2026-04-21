@@ -3,8 +3,8 @@
 Boggrt is a mock API server that serves responses based on configurable endpoints and conditions. The goal is to provide
 a simple and flexible way to mock API responses for testing and development purposes.
 
-It runs in a container, so you can run it as a standalone service or integrate it into your existing integration tests
-with `Testcontainers` for example.
+It runs in a container, so you can run it as a standalone service, integrate it into your integration tests
+(with `Testcontainers` for example), in your CI/CD pipelines, or even in your local development environment.
 
 ## Features
 
@@ -12,6 +12,62 @@ with `Testcontainers` for example.
 - Define specific conditions for incoming requests (method, path, body fields).
 - Supports JSONPath-like syntax for request validation.
 - Returns configured mock responses when conditions are met, otherwise returns 404.
+
+## Configuration
+Boggrt uses JSON configuration files to define the mock API endpoints and conditions.
+
+> [!TIP]
+> You can use one or more configuration files.
+
+> [!IMPORTANT]  
+> For detailed endpoint configuration options, see [Configuration Specification](spec.md).
+
+### Configuration Example: Single Endpoint Without Conditions
+
+The following configuration will return an HTTP 200 response for all requests to `/health/mock`.
+
+Configuration:
+
+```json
+{
+  "method": "GET",
+  "path": "/health/mock",
+  "response": {
+    "status": "ok"
+  }
+}
+```
+
+Result:
+
+- HTTP `200`
+- Body: `{"status":"ok"}`
+
+### Configuration Example: Single Endpoint With Conditions
+
+The following configuration will return an HTTP 202 response for all requests to `/orders/validate` where the request body
+contains a `customer.lastName` field with the value `Doe`.
+
+Configuration:
+
+```json
+{
+  "method": "POST",
+  "path": "/orders/validate",
+  "conditions": [
+    { "field": "customer.lastName", "operator": "equals", "value": "Doe" }
+  ],
+  "responseStatus": 202,
+  "response": {
+    "status": "accepted",
+    "code": "MOCK-OK"
+  }
+}
+```
+
+Result:
+- HTTP `202`
+- Body: `{"status":"accepted","code":"MOCK-OK"}`
 
 ## Usage
 
@@ -56,7 +112,7 @@ The following example shows how to run Boggrt in a Spring Boot application that 
 > The name of the configuration file does not matter and can be placed anywhere in the `resources` folder.
 
 > [!TIP]
-> You can find more information about the configuration options in the next section.
+> You can find more information about the configuration options in the previous section.
 
 2. Configure the container to mount the configuration files and override the `demo.external-url` property using `@DynamicPropertySource`.
 ```Java
@@ -134,59 +190,3 @@ demo.external-url=http://localhost:9080/
 spring.docker.compose.enabled=true
 spring.docker.compose.lifecycle-management=start_and_stop
 ```
-
-## Configuration
-Boggrt uses JSON configuration files to define the mock API endpoints and conditions.
-
-> [!TIP]
-> You can use one or more configuration files.
-
-> [!IMPORTANT]  
-> For detailed endpoint configuration options, see [Configuration Specification](spec.md).
-
-### Configuration Example: Single Endpoint Without Conditions
-
-The following configuration will return an HTTP 200 response for all requests to `/health/mock`.
-
-Configuration:
-
-```json
-{
-  "method": "GET",
-  "path": "/health/mock",
-  "response": {
-    "status": "ok"
-  }
-}
-```
-
-Result:
-
-- HTTP `200`
-- Body: `{"status":"ok"}`
-
-### Configuration Example: Single Endpoint With Conditions
-
-The following configuration will return an HTTP 202 response for all requests to `/orders/validate` where the request body
-contains a `customer.lastName` field with the value `Doe`.
-
-Configuration:
-
-```json
-{
-  "method": "POST",
-  "path": "/orders/validate",
-  "conditions": [
-    { "field": "customer.lastName", "operator": "equals", "value": "Doe" }
-  ],
-  "responseStatus": 202,
-  "response": {
-    "status": "accepted",
-    "code": "MOCK-OK"
-  }
-}
-```
-
-Result:
-- HTTP `202`
-- Body: `{"status":"accepted","code":"MOCK-OK"}`
