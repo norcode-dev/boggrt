@@ -34,6 +34,7 @@ public class Runner {
 
     if (endpointConfiguration.isEmpty()) {
       log.error("No endpoint configuration found");
+      //TODO throw exception when no endpoint configuration is found
     }
 
     log.info("Found {} endpoint configuration(s)", endpointConfiguration.size());
