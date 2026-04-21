@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.hasSize;
 
 @QuarkusTest
 @TestProfile(ConditionEndpointsTestProfile.class)
@@ -82,7 +84,70 @@ class ConditionalResourceTest {
         .when()
         .post("/orders/validate")
         .then()
-        .statusCode(400);
+        .statusCode(400)
+        .body(not(is("Response not found.")));
+  }
+
+  @Test
+  void testCaseInsensitiveOperatorName() {
+    given()
+        .contentType("application/json")
+        .body("""
+            { "name": "test" }
+            """)
+        .when()
+        .post("/ops/case-insensitive")
+        .then()
+        .statusCode(200)
+        .contentType("application/json")
+        .body("status", is("ok"));
+  }
+
+  @Test
+  void testResponseCanBeString() {
+    given()
+        .when()
+        .get("/response/string")
+        .then()
+        .statusCode(200)
+        .contentType("application/json")
+        .body(is("\"hello\""));
+  }
+
+  @Test
+  void testResponseCanBeNumber() {
+    given()
+        .when()
+        .get("/response/number")
+        .then()
+        .statusCode(200)
+        .contentType("application/json")
+        .body(is("42"));
+  }
+
+  @Test
+  void testResponseCanBeBoolean() {
+    given()
+        .when()
+        .get("/response/boolean")
+        .then()
+        .statusCode(200)
+        .contentType("application/json")
+        .body(is("true"));
+  }
+
+  @Test
+  void testResponseCanBeArray() {
+    given()
+        .when()
+        .get("/response/array")
+        .then()
+        .statusCode(200)
+        .contentType("application/json")
+        .body("", hasSize(3))
+        .body("[0]", is(1))
+        .body("[1]", is(2))
+        .body("[2]", is(3));
   }
 
   @Test

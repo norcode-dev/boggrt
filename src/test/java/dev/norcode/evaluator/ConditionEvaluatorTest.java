@@ -285,6 +285,55 @@ class ConditionEvaluatorTest {
             """));
   }
 
+  @Test
+  void shouldFailContainsOnNumericField() {
+    assertTrue(
+        ConditionEvaluator.isRequestInvalid(
+            List.of(condition("amount", ConditionOperator.CONTAINS, "4")),
+            """
+            { "amount": 42 }
+            """));
+  }
+
+  @Test
+  void shouldFailEqualsForIntVsBooleanTypeMismatch() {
+    // integer field vs boolean expected value
+    assertTrue(
+        ConditionEvaluator.isRequestInvalid(
+            List.of(condition("flag", ConditionOperator.EQUALS, true)),
+            """
+            { "flag": 1 }
+            """));
+
+    // boolean field vs integer expected value
+    assertTrue(
+        ConditionEvaluator.isRequestInvalid(
+            List.of(condition("flag", ConditionOperator.EQUALS, 1)),
+            """
+            { "flag": true }
+            """));
+  }
+
+  @Test
+  void shouldResolveThreeLevelNestedPath() {
+    assertFalse(
+        ConditionEvaluator.isRequestInvalid(
+            List.of(condition("a.b.c", ConditionOperator.EQUALS, "val")),
+            """
+            { "a": { "b": { "c": "val" } } }
+            """));
+  }
+
+  @Test
+  void shouldResolveIndexedPathWithinNestedArray() {
+    assertFalse(
+        ConditionEvaluator.isRequestInvalid(
+            List.of(condition("items[0].subitems[1].sku", ConditionOperator.EQUALS, "B")),
+            """
+            { "items": [{ "subitems": [{ "sku": "A" }, { "sku": "B" }] }] }
+            """));
+  }
+
   private static Condition condition(String field, ConditionOperator operator, Object value) {
     return new Condition(field, operator, value);
   }

@@ -97,5 +97,39 @@
       "status": "accepted",
       "code": "MOCK-OK"
     }
+  },
+  {
+    "method": "POST",
+    "path": "/ops/case-insensitive",
+    "conditions": [
+      {
+        "field": "name",
+        "operator": "EQUALS",
+        "value": "test"
+      }
+    ],
+    "response": {
+      "status": "ok"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/response/string",
+    "response": "hello"
+  },
+  {
+    "method": "GET",
+    "path": "/response/number",
+    "response": 42
+  },
+  {
+    "method": "GET",
+    "path": "/response/boolean",
+    "response": true
+  },
+  {
+    "method": "GET",
+    "path": "/response/array",
+    "response": [1, 2, 3]
   }
 ]
