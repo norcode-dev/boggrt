@@ -1,11 +1,12 @@
 package dev.norcode.router;
 
 import dev.norcode.configuration.EndpointConfiguration;
+import dev.norcode.evaluator.ConditionEvaluator;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ApplicationScoped
@@ -17,27 +18,47 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
   }
 
   @Override
-  public void configure(Set<EndpointConfiguration> endpointConfiguration) {
-    if (endpointConfiguration.isEmpty()) {
+  public void configure(Set<EndpointConfiguration> endpointConfigurations) {
+    if (endpointConfigurations.isEmpty()) {
       log.error("No endpoint configurations found");
       throw new RouterException(new IllegalArgumentException("No endpoint configurations found"));
     }
 
-    log.info("Endpoint configurations found: {}", endpointConfiguration.size());
+    log.info("Endpoint configurations found: {}", endpointConfigurations.size());
 
-    endpointConfiguration.forEach(
+    endpointConfigurations.forEach(
         configuration -> {
           log.info("Configuring: {}", configuration.path());
           router
               .route()
               .path(configuration.path())
               .method(configuration.method())
-              .handler(
-                  routingContext ->
-                      routingContext
-                          .response()
-                          .putHeader("content-type", "application/json")
-                          .end(configuration.response()));
+              .handler(routingContext -> handleConfiguredRoute(configuration, routingContext));
         });
+  }
+
+  private void handleConfiguredRoute(
+      EndpointConfiguration configuration, RoutingContext routingContext) {
+
+    if (hasUnmetConditions(configuration, routingContext)) {
+      log.debug("Conditions not met for {} {}", configuration.method(), configuration.path());
+      routingContext.response().setStatusCode(404).end("Response not found.");
+      return;
+    }
+
+    routingContext
+        .response()
+        .putHeader("content-type", "application/json")
+        .end(configuration.response());
+  }
+
+  private boolean hasUnmetConditions(
+      EndpointConfiguration configuration, RoutingContext routingContext) {
+    if (!configuration.hasValidConditions()) {
+      return false;
+    }
+
+    String requestBody = routingContext.body() != null ? routingContext.body().asString() : "";
+    return ConditionEvaluator.isRequestInvalid(configuration.conditions(), requestBody);
   }
 }
