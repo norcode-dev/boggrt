@@ -213,7 +213,7 @@ class ConditionEvaluatorTest {
   }
 
   @Test
-  void shouldRequireAllWildcardElementsToMatchOperator() {
+  void shouldRequireAnyWildcardElementsToMatchOperator() {
     assertFalse(
         ConditionEvaluator.isRequestInvalid(
             List.of(condition("items[*].sku", ConditionOperator.CONTAINS, "SKU-")),
@@ -222,7 +222,7 @@ class ConditionEvaluatorTest {
             """));
 
     assertTrue(
-        ConditionEvaluator.isRequestInvalid(
+        ConditionEvaluator.isRequestValid(
             List.of(condition("items[*].sku", ConditionOperator.CONTAINS, "SKU-")),
             """
             { "items": [{ "sku": "SKU-1" }, { "sku": "BAD" }] }
