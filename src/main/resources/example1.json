@@ -1,7 +1,11 @@
 {
   "method": "GET",
   "path": "/hello1",
-  "condition": "TODO",
+  "conditions": [
+    {
+
+    }
+  ],
   "response": {
     "firstName": "John",
     "lastName": "Doe",
