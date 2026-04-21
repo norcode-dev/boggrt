@@ -22,14 +22,6 @@ public class FileLoader implements ConfigurationLoader {
 
   @Override
   public Set<Path> get() {
-    try {
-      return getConfigurationFiles();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private Set<Path> getConfigurationFiles() throws IOException {
     log.info("Loading endpoint configuration from {}", appConfiguration.endpointsFolderPath());
 
     try (Stream<Path> stream = Files.list(Paths.get(appConfiguration.endpointsFolderPath()))) {
@@ -38,6 +30,9 @@ public class FileLoader implements ConfigurationLoader {
           .filter(path -> path.getFileName().toString().endsWith(".json"))
           .map(Path::toAbsolutePath)
           .collect(Collectors.toSet());
+    } catch (IOException e) {
+      log.error("Failed to load endpoint configuration", e);
+      throw new LoaderException(e);
     }
   }
 }
