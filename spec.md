@@ -88,7 +88,7 @@ Boggrt resolves `field` from the request body root.
 
 - `customer.lastName` -> nested property
 - `items[0].sku` -> indexed array element
-- `items[*].sku` -> wildcard over all array elements
+- `items[*].sku` -> wildcard over any array element (at least one match)
 
 Important:
 
@@ -133,7 +133,7 @@ All conditions are combined with AND. Every condition must pass.
 
 Wildcard behavior (`[*]`):
 
-- All resolved elements must satisfy the operator.
+- At least one resolved element must satisfy the operator.
 - If wildcard resolves to no elements, the condition fails.
 
 ## 7. Practical Examples
@@ -202,7 +202,7 @@ curl -i \
 
 Result: HTTP `202` with configured response.
 
-Non-matching request (`items[1].sku` does not contain `SKU-`):
+Non-matching request (no `items[*].sku` contains `SKU-`):
 
 ```bash
 curl -i \
@@ -210,7 +210,7 @@ curl -i \
   -H "Content-Type: application/json" \
   -d '{
     "customer": { "lastName": "Doe" },
-    "items": [{ "sku": "SKU-1" }, { "sku": "BAD" }],
+    "items": [{ "sku": "BAD-1" }, { "sku": "BAD-2" }],
     "traceId": "abc-123",
     "notes": ""
   }'
