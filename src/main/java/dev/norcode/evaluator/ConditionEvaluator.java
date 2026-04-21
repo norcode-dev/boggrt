@@ -1,49 +1,35 @@
 package dev.norcode.evaluator;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.norcode.configuration.Condition;
 import dev.norcode.configuration.ConditionOperator;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ConditionEvaluator {
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   public static boolean isRequestInvalid(List<Condition> conditions, String requestBody) {
     if (conditions == null || conditions.isEmpty()) {
       return false;
     }
 
-    JsonNode requestJson = parseRequestBody(requestBody);
-    if (requestJson == null) {
+    Optional<JsonNode> requestJson = RequestParser.parseRequestBody(requestBody);
+    if (requestJson.isEmpty()) {
       return true;
     }
 
     for (Condition condition : conditions) {
-      if (!evaluate(condition, requestJson)) {
+      if (!evaluate(condition, requestJson.get())) {
         log.debug("Condition failed: {}", condition);
         return true;
       }
     }
 
     return false;
-  }
-
-  private static JsonNode parseRequestBody(String requestBody) {
-    if (requestBody == null || requestBody.isBlank()) {
-      return null;
-    }
-
-    try {
-      return OBJECT_MAPPER.readTree(requestBody);
-    } catch (Exception e) {
-      log.debug("Could not parse request body as JSON", e);
-      return null;
-    }
   }
 
   private static boolean evaluate(Condition condition, JsonNode requestJson) {
