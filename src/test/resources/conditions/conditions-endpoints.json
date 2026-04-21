@@ -1,0 +1,84 @@
+[
+  {
+    "method": "POST",
+    "path": "/orders/validate",
+    "conditions": [
+      {
+        "field": "customer.lastName",
+        "operator": "equals",
+        "value": "Doe"
+      },
+      {
+        "field": "items",
+        "operator": "sizeGreaterThan",
+        "value": 1
+      },
+      {
+        "field": "items[*].sku",
+        "operator": "contains",
+        "value": "SKU-"
+      },
+      {
+        "field": "traceId",
+        "operator": "exists",
+        "value": true
+      },
+      {
+        "field": "notes",
+        "operator": "isEmpty",
+        "value": true
+      }
+    ],
+    "response": {
+      "status": "accepted",
+      "code": "MOCK-OK"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/numbers/range",
+    "conditions": [
+      {
+        "field": "amount",
+        "operator": "greaterThan",
+        "value": 100
+      },
+      {
+        "field": "amount",
+        "operator": "lessThan",
+        "value": 200
+      }
+    ],
+    "response": {
+      "status": "range-ok"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/items/count-exact",
+    "conditions": [
+      {
+        "field": "items",
+        "operator": "sizeEquals",
+        "value": 3
+      }
+    ],
+    "response": {
+      "status": "count-ok"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/items/count-max",
+    "conditions": [
+      {
+        "field": "items",
+        "operator": "sizeLessThan",
+        "value": 3
+      }
+    ],
+    "response": {
+      "status": "count-max-ok"
+    }
+  }
+]
