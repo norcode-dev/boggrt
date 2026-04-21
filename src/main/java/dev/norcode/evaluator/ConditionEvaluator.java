@@ -12,24 +12,28 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ConditionEvaluator {
 
-  public static boolean isRequestInvalid(List<Condition> conditions, String requestBody) {
+  public static boolean isRequestValid(List<Condition> conditions, String requestBody) {
     if (conditions == null || conditions.isEmpty()) {
-      return false;
+      return true;
     }
 
     Optional<JsonNode> requestJson = RequestParser.parseRequestBody(requestBody);
     if (requestJson.isEmpty()) {
-      return true;
+      return false;
     }
 
     for (Condition condition : conditions) {
       if (!evaluate(condition, requestJson.get())) {
         log.debug("Condition failed: {}", condition);
-        return true;
+        return false;
       }
     }
 
-    return false;
+    return true;
+  }
+
+  public static boolean isRequestInvalid(List<Condition> conditions, String requestBody) {
+    return !isRequestValid(conditions, requestBody);
   }
 
   private static boolean evaluate(Condition condition, JsonNode requestJson) {
