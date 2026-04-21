@@ -28,6 +28,12 @@ You can change the folder where the configuration files are loaded by setting th
 docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 8080:8080 norcodedev/boggrt
 ```
 
+## Configuration
+Boggrt uses JSON configuration files to define the mock API endpoints and conditions.
+
+> [!TIP]
+> You can use one or more configuration files.
+
 > [!IMPORTANT]  
 > For detailed endpoint configuration options, see [Configuration Specification](spec.md).
 
