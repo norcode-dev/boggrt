@@ -22,16 +22,15 @@ public class FileLoader implements ConfigurationLoader {
   }
 
   @Override
-  public EndpointConfiguration get() {
+  public Set<Path> get() {
     try {
-      getConfigurationFiles().forEach(log::info);
-      return new EndpointConfiguration(HttpMethod.GET);
+      return getConfigurationFiles();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private Set<String> getConfigurationFiles() throws IOException {
+  private Set<Path> getConfigurationFiles() throws IOException {
     log.info("Loading endpoint configuration from {}", appConfiguration.endpointsFolderPath());
 
     try (Stream<Path> stream = Files.list(Paths.get(appConfiguration.endpointsFolderPath()))) {
@@ -39,7 +38,6 @@ public class FileLoader implements ConfigurationLoader {
           .filter(path -> !Files.isDirectory(path))
           .filter(path -> path.getFileName().toString().endsWith(".json"))
           .map(Path::toAbsolutePath)
-          .map(Path::toString)
           .collect(Collectors.toSet());
     }
   }

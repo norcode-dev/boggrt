@@ -1,5 +1,8 @@
 package dev.norcode.configuration;
 
+import java.nio.file.Path;
+import java.util.Set;
+
 public interface ConfigurationLoader {
-    EndpointConfiguration get();
+  Set<Path> get();
 }
