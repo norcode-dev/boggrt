@@ -15,7 +15,7 @@ class DefaultSourceResourceTest {
   void testDefaultSourceLoadsEndpointsFromMainResourcesWhenBoggrtSourceIsNotSet() {
     given()
         .when()
-        .get("/hello1")
+        .get("/hello-world")
         .then()
         .statusCode(200)
         .contentType("application/json")
