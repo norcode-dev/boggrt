@@ -4,7 +4,7 @@ Boggrt is a mock API server that serves responses based on configurable endpoint
 a simple and flexible way to mock API responses for testing and development purposes.
 
 It runs in a container, so you can run it as a standalone service or integrate it into your existing integration tests
-with Testcontainers for example.
+with `Testcontainers` for example.
 
 ## Features
 
@@ -15,10 +15,21 @@ with Testcontainers for example.
 
 ## Usage
 
-Running Boggrt is quite straightforward: pull the image [norcodedev/boggrt](link TBD) from Docker Hub and configure the 
-`BOGGRT_SOURCE` env variable pointing the folder containing the JSON configuration files.
+### Running Boggrt: Standalone
 
-For detailed configuration options, see [Configuration Specification](spec.md).
+To run Boggrt in standalone mode, you need to mount a volume with the configuration files pointing to the `/resources` folder.
+
+```shell script
+docker run -d ./src/main/resources:/resources --rm -p 8080:8080 norcodedev/boggrt
+```
+
+You can change the folder where the configuration files are loaded by setting the `BOGGRT_SOURCE` env variable.
+```shell script
+docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 8080:8080 norcodedev/boggrt
+```
+
+> [!IMPORTANT]  
+> For detailed endpoint configuration options, see [Configuration Specification](spec.md).
 
 ### Configuration Example: Single Endpoint Without Conditions
 
