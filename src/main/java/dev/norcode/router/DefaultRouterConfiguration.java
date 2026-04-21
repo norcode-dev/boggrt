@@ -18,6 +18,13 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
 
   @Override
   public void configure(Set<EndpointConfiguration> endpointConfiguration) {
+    if (endpointConfiguration.isEmpty()) {
+      log.error("No endpoint configuration found");
+      // TODO throw exception when no endpoint configuration is found
+    }
+
+    log.info("Found {} endpoint configuration(s)", endpointConfiguration.size());
+
     endpointConfiguration.forEach(
         configuration -> {
           log.info("Configuring: {}", configuration.path());

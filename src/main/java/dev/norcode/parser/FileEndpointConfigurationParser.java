@@ -20,11 +20,14 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
   @Override
   public Set<EndpointConfiguration> parse(Set<Path> paths) {
 
+    if (paths.isEmpty()) {
+      log.error("No configuration files found");
+    }
+
     return paths.stream()
         .map(
             path -> {
               try {
-                log.info("Parsing endpoint configuration from {}", path);
                 return readEndpointConfigurationsFromFile(path);
               } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -36,6 +39,9 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
 
   private static Set<EndpointConfiguration> readEndpointConfigurationsFromFile(Path path)
       throws IOException {
+
+    log.info("Parsing endpoint configuration from {}", path);
+
     JsonNode jsonNode = objectMapper.readTree(path.toFile());
     if (jsonNode.isArray()) {
       return jsonNode
