@@ -1,8 +1,8 @@
-package dev.norcode;
+package dev.norcode.resource.noconditions;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 
 @QuarkusIntegrationTest
-class GreetingResourceIT extends NoConditionsResourceTest {
+class NoConditionsResourceIT extends NoConditionsResourceTest {
     // Execute the same tests but in packaged mode.
 }

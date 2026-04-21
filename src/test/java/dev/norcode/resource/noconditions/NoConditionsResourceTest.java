@@ -1,4 +1,4 @@
-package dev.norcode;
+package dev.norcode.resource.noconditions;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
