@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.hasSize;
 @QuarkusTest
 class GreetingResourceTest {
     @Test
-    void testHelloEndpoint() {
+    void testHello2Endpoint() {
         given()
           .when().get("/hello2")
           .then()
@@ -26,4 +26,18 @@ class GreetingResourceTest {
                 .body("options[1].description", is("description 2"));
     }
 
+    @Test
+    void testHello3Endpoint() {
+        given()
+                .when().get("/hello3")
+                .then()
+                .statusCode(200)
+                .contentType("application/json")
+                .body("firstName", is("Jane"))
+                .body("lastName", is("Doe"))
+                .body("age", is(30))
+                .body("options", hasSize(1))
+                .body("options[0].title", is("title 1"))
+                .body("options[0].subTitle", is("subTitle 1"));
+    }
 }
