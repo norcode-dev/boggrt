@@ -15,30 +15,35 @@ import java.util.stream.Collectors;
 @Slf4j
 @ApplicationScoped
 public class FileEndpointConfigurationParser implements EndpointConfigurationParser<Path> {
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
   public Set<EndpointConfiguration> parse(Set<Path> paths) {
-    ObjectMapper objectMapper = new ObjectMapper();
 
     return paths.stream()
         .map(
             path -> {
               try {
                 log.info("Parsing endpoint configuration from {}", path);
-                JsonNode jsonNode = objectMapper.readTree(path.toFile());
-                if (jsonNode.isArray()) {
-                  return jsonNode
-                      .valueStream()
-                      .map(FileEndpointConfigurationParser::parseEndpointConfiguration)
-                      .collect(Collectors.toSet());
-                }
-                return Set.of(parseEndpointConfiguration(jsonNode));
+                return readEndpointConfigurationsFromFile(path);
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
             })
         .flatMap(Set::stream)
         .collect(Collectors.toSet());
+  }
+
+  private static Set<EndpointConfiguration> readEndpointConfigurationsFromFile(Path path)
+      throws IOException {
+    JsonNode jsonNode = objectMapper.readTree(path.toFile());
+    if (jsonNode.isArray()) {
+      return jsonNode
+          .valueStream()
+          .map(FileEndpointConfigurationParser::parseEndpointConfiguration)
+          .collect(Collectors.toSet());
+    }
+    return Set.of(parseEndpointConfiguration(jsonNode));
   }
 
   private static EndpointConfiguration parseEndpointConfiguration(JsonNode jsonNode) {
