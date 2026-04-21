@@ -24,7 +24,7 @@ Boggrt uses JSON configuration files to define the mock API endpoints and condit
 
 ### Configuration Example: Single Endpoint Without Conditions
 
-The following configuration will return an HTTP 200 response for all requests to `/health/mock`.
+The following configuration will return an `HTTP 200` response for all requests to `/health/mock`.
 
 Configuration:
 
@@ -45,7 +45,7 @@ Result:
 
 ### Configuration Example: Single Endpoint With Conditions
 
-The following configuration will return an HTTP 202 response for all requests to `/orders/validate` where the request body
+The following configuration will return an `HTTP 202` response for all requests to `/orders/validate` where the request body
 contains a `customer.lastName` field with the value `Doe`.
 
 Configuration:
