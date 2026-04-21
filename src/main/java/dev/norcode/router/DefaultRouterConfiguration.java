@@ -50,6 +50,7 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
 
     routingContext
         .response()
+        .setStatusCode(configuration.resolvedResponseStatus())
         .putHeader("content-type", "application/json")
         .end(configuration.response());
   }

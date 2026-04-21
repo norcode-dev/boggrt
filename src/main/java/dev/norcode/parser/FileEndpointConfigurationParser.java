@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -65,7 +66,20 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
         HttpMethod.valueOf(jsonNode.get("method").asText()),
         jsonNode.get("path").asText(),
         conditions,
+        extractResponseStatus(jsonNode),
         jsonNode.get("response").toPrettyString());
+  }
+
+  private Optional<Integer> extractResponseStatus(JsonNode jsonNode) {
+    return Optional.ofNullable(jsonNode.get("responseStatus"))
+        .filter(responseStatusNode -> !responseStatusNode.isNull())
+        .map(
+            responseStatusNode -> {
+              if (responseStatusNode.isIntegralNumber()) {
+                return responseStatusNode.intValue();
+              }
+              throw new ParserException("responseStatus must be an integer.");
+            });
   }
 
   private List<Condition> extractConditions(JsonNode jsonNode) {
