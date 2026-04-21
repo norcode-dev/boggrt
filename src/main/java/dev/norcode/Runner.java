@@ -1,15 +1,14 @@
 package dev.norcode;
 
-import dev.norcode.configuration.EndpointConfiguration;
 import dev.norcode.configuration.ConfigurationLoader;
+import dev.norcode.configuration.EndpointConfiguration;
 import dev.norcode.parser.EndpointConfigurationParser;
 import io.quarkus.runtime.StartupEvent;
 import io.vertx.ext.web.Router;
 import jakarta.enterprise.event.Observes;
-import lombok.extern.slf4j.Slf4j;
-
 import java.nio.file.Path;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Runner {
@@ -28,21 +27,16 @@ public class Runner {
 
     log.info("Installing routes");
     Set<Path> paths = configurationLoader.get();
-    EndpointConfiguration endpointConfiguration = endpointConfigurationParser.parse(paths);
+    Set<EndpointConfiguration> endpointConfiguration = endpointConfigurationParser.parse(paths);
     router
         .route()
         .path("/hello")
-        .method(endpointConfiguration.method())
+        .method(endpointConfiguration.stream().findFirst().get().method())
         .handler(
             routingContext ->
                 routingContext
                     .response()
                     .putHeader("content-type", "application/json")
-                    .end(
-                        """
-                {
-                "message": "Hello from Quarkus REST"
-                }
-    """));
+                    .end(endpointConfiguration.stream().findFirst().get().response()));
   }
 }

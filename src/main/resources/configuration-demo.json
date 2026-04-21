@@ -1,0 +1,5 @@
+{
+  "method": "GET",
+  "path": "/hello",
+  "response": "Hello from Quarkus!"
+}
