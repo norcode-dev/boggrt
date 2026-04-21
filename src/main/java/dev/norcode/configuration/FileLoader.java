@@ -1,6 +1,5 @@
 package dev.norcode.configuration;
 
-import io.vertx.core.http.HttpMethod;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.nio.file.Files;
