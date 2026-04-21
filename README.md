@@ -109,6 +109,32 @@ class DemoControllerIntegrationTest extends TestcontainersConfiguration {
 }
 ```
 
+### Running Boggrt: Spring Boot + Docker Compose
+During the development you may want to mock the external API calls, you can do it easily with Docker Compose and Boggrt.
+
+> [!NOTE]  
+>The advantage of using Boggrt is that you can reuse the same configuration files used in the integration tests.
+
+The following example shows how to automatically run Docker Compose and Boggrt when starting the application.
+
+1. Create a Docker Compose file with the following content:
+```yaml
+services:
+  boggrt:
+    image: norcodedev/boggrt
+    volumes:
+      - ./src/test/resources/test-data:/resources
+    ports:
+      - "9080:8080"
+```
+
+2. Add the following configuration to your local Spring Boot configuration:
+```properties
+demo.external-url=http://localhost:9080/
+spring.docker.compose.enabled=true
+spring.docker.compose.lifecycle-management=start_and_stop
+```
+
 ## Configuration
 Boggrt uses JSON configuration files to define the mock API endpoints and conditions.
 
