@@ -67,23 +67,24 @@ public class ConditionEvaluator {
   }
 
   private static List<JsonNode> resolveField(String fieldPath, JsonNode requestJson) {
-    List<JsonNode> currentNodes = new ArrayList<>();
-    currentNodes.add(requestJson);
+    List<JsonNode> matchedNodes = List.of(requestJson);
 
     for (String segment : fieldPath.split("\\.")) {
-      List<JsonNode> nextNodes = new ArrayList<>();
-
-      for (JsonNode currentNode : currentNodes) {
-        nextNodes.addAll(resolveSegment(currentNode, segment));
-      }
-
-      currentNodes = nextNodes;
-      if (currentNodes.isEmpty()) {
+      matchedNodes = resolveSegmentForAllNodes(matchedNodes, segment);
+      if (matchedNodes.isEmpty()) {
         return List.of();
       }
     }
 
-    return currentNodes;
+    return matchedNodes;
+  }
+
+  private static List<JsonNode> resolveSegmentForAllNodes(List<JsonNode> nodes, String segment) {
+    List<JsonNode> resolvedNodes = new ArrayList<>();
+    for (JsonNode node : nodes) {
+      resolvedNodes.addAll(resolveSegment(node, segment));
+    }
+    return resolvedNodes;
   }
 
   private static List<JsonNode> resolveSegment(JsonNode node, String segment) {
