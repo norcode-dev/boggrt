@@ -1,5 +1,7 @@
 package dev.norcode.configuration;
 
 import io.vertx.core.http.HttpMethod;
+import java.util.List;
 
-public record EndpointConfiguration(HttpMethod method, String path, String response) {}
+public record EndpointConfiguration(
+    HttpMethod method, String path, List<Condition> conditions, String response) {}

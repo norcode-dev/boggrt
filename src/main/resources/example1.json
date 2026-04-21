@@ -2,9 +2,7 @@
   "method": "GET",
   "path": "/hello1",
   "conditions": [
-    {
 
-    }
   ],
   "response": {
     "firstName": "John",
