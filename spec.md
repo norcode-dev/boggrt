@@ -1,44 +1,46 @@
 # Boggrt Configuration Specification
 
-## 1. Purpose
+This document defines how Boggrt loads endpoint configuration and matches incoming requests.
 
-This document explains how Boggrt reads endpoint configurations and how requests are matched at runtime.
+## Quick Overview
 
-Boggrt serves a configured response when:
+Boggrt returns a configured response when both of these are true:
 
-1. HTTP method and path match a configured endpoint.
-2. All endpoint conditions pass (if conditions are configured).
+1. Request `method` and `path` match an endpoint.
+2. Endpoint `conditions` pass (if conditions are configured).
 
-Each endpoint may also define an optional success response status using `responseStatus`. If omitted, Boggrt uses HTTP `200`.
+If an endpoint matches and `responseStatus` is omitted, Boggrt returns HTTP `200`.
 
-If no endpoint matches, or any condition fails, Boggrt returns `404 Not Found`.
+If no endpoint matches, or any condition fails, Boggrt returns HTTP `404 Not Found` with body `Response not found.`.
 
-## 2. Where Configuration Is Loaded From
+Successful responses are sent with `Content-Type: application/json`.
 
-Boggrt reads endpoint definitions from `.json` files located in the directory specified by the `boggrt.endpoints-folder-path` Quarkus configuration key.
+## 1. Configuration Source
+
+Boggrt reads endpoint definitions from `.json` files in the directory configured by Quarkus key `boggrt.endpoints-folder-path`.
+
 - Environment override: `BOGGRT_SOURCE`
-- Default value: `src/main/resources/`
+- Default directory: `src/main/resources/`
 
-Each `.json` file can contain either:
+Each `.json` file may contain:
 
 - one endpoint object
 - an array of endpoint objects
 
-## 3. Runtime Matching Flow
+## 2. Runtime Matching Flow
 
 For each incoming request:
 
-1. Boggrt checks method + path against configured endpoints.
-2. If the endpoint has no conditions (missing or empty array), Boggrt returns the configured response with HTTP `responseStatus` (or `200` if omitted).
-3. If conditions exist, Boggrt parses the request body as JSON and evaluates all conditions.
-4. If every condition passes, Boggrt returns HTTP `responseStatus` (or `200` if omitted) with the configured response.
-5. If any condition fails (or body JSON cannot be parsed), Boggrt returns HTTP `404` with body `Response not found.`
+1. Find endpoints where `method` + `path` match.
+2. If the endpoint has no `conditions` (missing or empty), return its configured `response` with HTTP `responseStatus` (or `200` when omitted).
+3. If `conditions` exist, parse request body as JSON.
+4. Evaluate all configured conditions.
+5. If all conditions pass, return endpoint `response` with HTTP `responseStatus` (or `200` when omitted).
+6. If JSON parsing fails or any condition fails, return HTTP `404` and `Response not found.`.
 
-Successful responses are sent with `Content-Type: application/json`.
+## 3. Endpoint Schema
 
-## 4. Endpoint Schema
-
-### 4.1 Endpoint Object
+### 3.1 Endpoint Object
 
 ```json
 {
@@ -58,15 +60,15 @@ Successful responses are sent with `Content-Type: application/json`.
 }
 ```
 
-| Field | Type | Required | Rules |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `method` | String | Yes | Must be a valid Vert.x `HttpMethod` value (for example `GET`, `POST`, `PUT`, `DELETE`). Use uppercase names. |
+| `method` | String | Yes | Must be a valid Vert.x `HttpMethod` (for example `GET`, `POST`, `PUT`, `DELETE`). Use uppercase. |
 | `path` | String | Yes | Route path to match (for example `/orders/validate`). |
 | `conditions` | Array\<Condition\> | No | If missing or empty, no condition checks are performed. |
-| `responseStatus` | Number | No | HTTP status code returned when the endpoint matches and conditions pass. If omitted, default is `200`. |
-| `response` | Any JSON value | Yes | Returned as the response body when endpoint matches. |
+| `responseStatus` | Number | No | Status code returned when endpoint matches and conditions pass. Defaults to `200` when omitted. |
+| `response` | Any JSON value | Yes | Response body returned when endpoint matches. |
 
-### 4.2 Condition Object
+### 3.2 Condition Object
 
 ```json
 {
@@ -76,28 +78,28 @@ Successful responses are sent with `Content-Type: application/json`.
 }
 ```
 
-| Field | Type | Required | Rules |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `field` | String | Yes | Path expression resolved from the request JSON body root. |
+| `field` | String | Yes | Path expression resolved from the request JSON root. |
 | `operator` | String | Yes | One of the supported operators (case-insensitive). |
-| `value` | String \| Number \| Boolean | Yes | Required for parsing in all operators, including `exists` and `isEmpty`. |
+| `value` | String \| Number \| Boolean | Yes | Required by schema for all operators, including `exists` and `isEmpty`. |
 
-## 5. Field Path Syntax
+## 4. Field Path Syntax
 
-Boggrt resolves `field` from the request body root.
+Boggrt resolves `field` from the request JSON body root.
+
+Common patterns:
 
 - `customer.lastName` -> nested property
-- `items[0].sku` -> indexed array element
-- `items[*].sku` -> wildcard over any array element (at least one match)
+- `items[0].sku` -> array element by index
+- `items[*].sku` -> wildcard over array elements (condition passes if any element matches)
 
-Important:
+Notes:
 
 - `request.` is not a reserved prefix.
-- Use `request.lastName` only if your request JSON really has a top-level `request` field.
+- Use `request.lastName` only if the body really has a top-level `request` field.
 
-Example:
-
-If body is:
+Example request body:
 
 ```json
 {
@@ -109,17 +111,17 @@ If body is:
 }
 ```
 
-then valid fields are:
+Valid paths for that body include:
 
 - `lastName`
 - `items[0].sku`
 - `items[*].sku`
 
-## 6. Operators
+## 5. Operators
 
-All conditions are combined with AND. Every condition must pass.
+All conditions are combined with logical `AND`, so every configured condition must pass.
 
-| Operator | Field Type Expected | Value Type | Passes When |
+| Operator | Expected Field Type | Value Type | Passes When |
 |---|---|---|---|
 | `equals` | string, number, boolean | same logical type | Field equals `value` |
 | `contains` | string | string (recommended) | Field contains `value` as substring |
@@ -131,14 +133,14 @@ All conditions are combined with AND. Every condition must pass.
 | `sizeLessThan` | array or string | number | Size/length < `value` |
 | `exists` | any non-null field | any (required but ignored) | Field path resolves to a non-null value |
 
-Wildcard behavior (`[*]`):
+Wildcard (`[*]`) rule:
 
-- At least one resolved element must satisfy the operator.
-- If wildcard resolves to no elements, the condition fails.
+- A wildcard condition passes when at least one resolved element satisfies the operator.
+- If wildcard resolution returns no elements, the condition fails.
 
-## 7. Practical Examples
+## 6. Practical Examples
 
-### 7.1 Single Endpoint Without Conditions
+### 6.1 Single Endpoint Without Conditions
 
 Configuration:
 
@@ -161,11 +163,11 @@ curl -i http://localhost:8080/health/mock
 Result:
 
 - HTTP `200`
-- body: `{"status":"ok"}`
+- Body: `{"status":"ok"}`
 
-### 7.2 Endpoint With Conditions
+### 6.2 Endpoint With Conditions
 
-Configuration:
+#### Configuration:
 
 ```json
 {
@@ -186,7 +188,7 @@ Configuration:
 }
 ```
 
-Matching request:
+#### Matching request:
 
 ```bash
 curl -i \
@@ -200,9 +202,9 @@ curl -i \
   }'
 ```
 
-Result: HTTP `202` with configured response.
+Result: HTTP `202` with configured response body.
 
-Non-matching request (no `items[*].sku` contains `SKU-`):
+#### Non-matching request (no `items[*].sku` contains `SKU-`):
 
 ```bash
 curl -i \
@@ -216,9 +218,9 @@ curl -i \
   }'
 ```
 
-Result: HTTP `404` with `Response not found.`
+Result: HTTP `404` with `Response not found.`.
 
-### 7.3 Multiple Endpoints In One File
+### 6.3 Multiple Endpoints in One File
 
 ```json
 [
