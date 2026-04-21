@@ -1,13 +1,12 @@
 {
   "method": "GET",
-  "path": "/hello1",
+  "path": "/hello-world",
   "conditions": [
-
   ],
   "response": {
     "firstName": "John",
     "lastName": "Doe",
-    "age": 30,
+    "age": 100,
     "options": [
       {
         "title": "title 1",
