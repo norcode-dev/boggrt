@@ -3,8 +3,8 @@ package dev.norcode;
 import dev.norcode.configuration.ConfigurationLoader;
 import dev.norcode.configuration.EndpointConfiguration;
 import dev.norcode.parser.EndpointConfigurationParser;
+import dev.norcode.router.RouterConfiguration;
 import io.quarkus.runtime.StartupEvent;
-import io.vertx.ext.web.Router;
 import jakarta.enterprise.event.Observes;
 import java.nio.file.Path;
 import java.util.Set;
@@ -15,15 +15,18 @@ public class Runner {
 
   private final ConfigurationLoader configurationLoader;
   private final EndpointConfigurationParser<Path> endpointConfigurationParser;
+  private final RouterConfiguration routerConfiguration;
 
   public Runner(
       ConfigurationLoader configurationLoader,
-      EndpointConfigurationParser<Path> endpointConfigurationParser) {
+      EndpointConfigurationParser<Path> endpointConfigurationParser,
+      RouterConfiguration routerConfiguration) {
     this.configurationLoader = configurationLoader;
     this.endpointConfigurationParser = endpointConfigurationParser;
+    this.routerConfiguration = routerConfiguration;
   }
 
-  void installRoute(@Observes StartupEvent startupEvent, Router router) {
+  void installRoute(@Observes StartupEvent startupEvent) {
 
     log.info("Installing routes");
     Set<Path> paths = configurationLoader.get();
@@ -35,17 +38,6 @@ public class Runner {
 
     log.info("Found {} endpoint configuration(s)", endpointConfiguration.size());
 
-    endpointConfiguration.forEach(
-        configuration ->
-            router
-                .route()
-                .path(configuration.path())
-                .method(configuration.method())
-                .handler(
-                    routingContext ->
-                        routingContext
-                            .response()
-                            .putHeader("content-type", "application/json")
-                            .end(configuration.response())));
+    routerConfiguration.configure(endpointConfiguration);
   }
 }
