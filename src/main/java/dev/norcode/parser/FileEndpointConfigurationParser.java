@@ -30,7 +30,9 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
               try {
                 return readEndpointConfigurationsFromFile(path);
               } catch (IOException e) {
-                throw new RuntimeException(e);
+                var errorMessage = "Failed to parse endpoint configuration from " + path;
+                log.error(errorMessage, e);
+                throw new ParserException(errorMessage, e);
               }
             })
         .flatMap(Set::stream)
