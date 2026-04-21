@@ -1,4 +1,4 @@
-# Boggrt Configuration Specification
+# Boggrt - Configuration Specification
 
 This document defines how Boggrt loads endpoint configuration and matches incoming requests.
 
