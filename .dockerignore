@@ -1,4 +1,13 @@
+# Ignore everything first
 *
+
+# Then allow what we need for building
+!.mvn/
+!mvnw
+!src/
+!pom.xml
+
+# And allow the built artifacts
 !target/*-runner
 !target/*-runner.jar
 !target/lib/*
