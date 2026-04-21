@@ -39,8 +39,6 @@ The following example shows how to run Boggrt in a Spring Boot application that 
 {
   "method": "GET",
   "path": "/api/v2/facts",
-  "conditions": [
-  ],
   "response": {
     "data": [
       {
@@ -54,6 +52,8 @@ The following example shows how to run Boggrt in a Spring Boot application that 
   }
 }
 ```
+> [!NOTE]
+> The name of the configuration file does not matter and can be placed anywhere in the `resources` folder.
 
 > [!TIP]
 > You can find more information about the configuration options in the next section.
