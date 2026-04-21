@@ -28,6 +28,87 @@ You can change the folder where the configuration files are loaded by setting th
 docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 8080:8080 norcodedev/boggrt
 ```
 
+### Running Boggrt: Spring Boot + Testcontainers
+
+The Demo application exposes an endpoint called `/demo/hello` wich calls an external API defined in `demo.external-url` property.
+
+The following example shows how to run Boggrt in a Spring Boot application that uses `Testcontainers` for integration testing.
+
+1. Create a configuration file in `src/test/resources/test-data` called `example.json` with the following content:
+```json
+{
+  "method": "GET",
+  "path": "/api/v2/facts",
+  "conditions": [
+  ],
+  "response": {
+    "data": [
+      {
+        "id": "c4e46f7c-d3e0-44e7-872e-773bd03c19a6",
+        "type": "fact",
+        "attributes": {
+          "body": "The average dog lives 10 to 14 years."
+        }
+      }
+    ]
+  }
+}
+```
+
+> [!TIP]
+> You can find more information about the configuration options in the next section.
+
+2. Configure the container to mount the configuration files and override the `demo.external-url` property using `@DynamicPropertySource`.
+```Java
+class TestcontainersConfiguration {
+
+  static GenericContainer<?> boggrt =
+      new GenericContainer<>(DockerImageName.parse("norcodedev/boggrt"))
+          .withExposedPorts(8080)
+          .withCopyToContainer(MountableFile.forClasspathResource("test-data"), "/resources");
+
+  @DynamicPropertySource
+  static void demoProperties(DynamicPropertyRegistry registry) {
+    boggrt.start();
+
+    String url = "http://" + boggrt.getHost() + ":" + boggrt.getMappedPort(8080);
+    registry.add("demo.external-url", () -> url);
+  }
+}
+```
+
+3. Create a test class that extends `TestcontainersConfiguration` and uses `RestTestClient`.
+```Java
+class DemoControllerIntegrationTest extends TestcontainersConfiguration {
+
+  @Autowired RestTestClient restTestClient;
+
+  @Test
+  void simpleTest() {
+    restTestClient
+        .get()
+        .uri("/demo/hello")
+        .accept()
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectBody(FactsResponse.class)
+        .value(
+            factsResponse -> {
+              assertNotNull(factsResponse);
+              assertNotNull(factsResponse.data());
+              assertNotNull(factsResponse.data().getFirst().type());
+              assertEquals("fact", factsResponse.data().getFirst().type());
+              assertNotNull(factsResponse.data().getFirst().attributes());
+              assertNotNull(factsResponse.data().getFirst().attributes().body());
+              assertEquals(
+                  "The average dog lives 10 to 14 years.",
+                  factsResponse.data().getFirst().attributes().body());
+            });
+  }
+}
+```
+
 ## Configuration
 Boggrt uses JSON configuration files to define the mock API endpoints and conditions.
 
