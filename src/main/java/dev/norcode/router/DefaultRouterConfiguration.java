@@ -4,6 +4,7 @@ import dev.norcode.configuration.EndpointConfiguration;
 import dev.norcode.evaluator.ConditionEvaluator;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
               .route()
               .path(configuration.path())
               .method(configuration.method())
+              .handler(BodyHandler.create())
               .handler(routingContext -> handleConfiguredRoute(configuration, routingContext));
         });
   }
