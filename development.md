@@ -1,15 +1,6 @@
-# Boggrt
+# Boggrt - Development information
 
-Boggrt is a mock API server that serves responses based on configurable endpoints and conditions.
-
-## Features
-
-- Configure multiple mock API endpoints.
-- Define specific conditions for incoming requests (method, path, body fields).
-- Supports JSONPath-like syntax for request validation.
-- Returns configured mock responses when conditions are met, otherwise returns 404.
-
-For detailed configuration options, see [Configuration Specification](spec.md).
+Boggrt is a Quarkus-based application, and here you can find some useful information about how to build and run the application.
 
 ## Running the application in dev mode
 
