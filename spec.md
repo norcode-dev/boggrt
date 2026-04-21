@@ -20,7 +20,7 @@ Successful responses are sent with `Content-Type: application/json`.
 Boggrt reads endpoint definitions from `.json` files in the directory configured by Quarkus key `boggrt.endpoints-folder-path`.
 
 - Environment override: `BOGGRT_SOURCE`
-- Default directory: `src/main/resources/`
+- Default directory: `/resources`
 
 Each `.json` file may contain:
 
@@ -31,12 +31,12 @@ Each `.json` file may contain:
 
 For each incoming request:
 
-1. Find endpoints where `method` + `path` match.
-2. If the endpoint has no `conditions` (missing or empty), return its configured `response` with HTTP `responseStatus` (or `200` when omitted).
-3. If `conditions` exist, parse request body as JSON.
+1. Identify an endpoint where the method and path match.
+2. If the endpoint has no conditions (missing or empty), return the configured response with HTTP status responseStatus (defaults to 200 if not specified).
+3. If conditions are present, parse the request body as JSON.
 4. Evaluate all configured conditions.
-5. If all conditions pass, return endpoint `response` with HTTP `responseStatus` (or `200` when omitted).
-6. If JSON parsing fails or any condition fails, return HTTP `404` and `Response not found.`.
+5. If all conditions pass, return the endpoint’s response with HTTP status responseStatus (defaults to 200 if not specified).
+6. If JSON parsing fails or any condition does not pass, return HTTP 404 with the message Response not found.
 
 ## 3. Endpoint Schema
 
