@@ -21,6 +21,13 @@ public class Runner {
         router.route()
                 .path("/hello")
                 .method(configuration.method())
-                .handler(routingContext -> routingContext.response().end("Hello from Quarkus REST"));
+                .handler(
+                        routingContext -> routingContext.response()
+                                .putHeader("content-type", "application/json")
+                                .end("""
+                {
+                "message": "Hello from Quarkus REST"
+                }
+    """));
     }
 }
