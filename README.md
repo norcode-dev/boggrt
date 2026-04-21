@@ -56,14 +56,14 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 ./mvnw package -Dnative -Dquarkus.native.container-build=true
 ```
 
-You can then execute your native executable with: `./target/boggrt-1.0.0-SNAPSHOT-runner`
+You can then execute your native executable with: `./target/boggrt-1.0.0-runner`
 
 ## Build the Docker image 
 ```shell script
-docker build -f src/main/docker/Dockerfile.native-micro -t norcode/boggrt .
+docker build -f src/main/docker/Dockerfile.native-micro -t norcodedev/boggrt .
 ```
 
 ## Running the Docker image
 ```shell script
-docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 8080:8080 quarkus/boggrt
+docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 8080:8080 norcodedev/boggrt
 ```
