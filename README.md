@@ -88,7 +88,7 @@ docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 80
 
 The Demo application exposes an endpoint called `/demo/hello` wich calls an external API defined in `demo.external-url` property.
 
-The following example shows how to run Boggrt in a Spring Boot application that uses `Testcontainers` for integration testing.
+The following example shows how to integrate Boggrt in a Spring Boot application that uses `Testcontainers` for integration testing.
 
 1. Create a configuration file in `src/test/resources/test-data` called `example.json` with the following content:
 ```json
