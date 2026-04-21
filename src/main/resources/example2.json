@@ -22,17 +22,13 @@
     "method": "GET",
     "path": "/hello3",
     "response": {
-      "firstName": "John",
+      "firstName": "Jane",
       "lastName": "Doe",
       "age": 30,
       "options": [
         {
           "title": "title 1",
-          "description": "description 1"
-        },
-        {
-          "title": "title 2",
-          "description": "description 2"
+          "subTitle": "subTitle 1"
         }
       ]
     }
