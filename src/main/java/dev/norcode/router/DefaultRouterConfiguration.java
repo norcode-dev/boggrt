@@ -23,7 +23,7 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
       // TODO throw exception when no endpoint configuration is found
     }
 
-    log.info("Found {} endpoint configuration(s)", endpointConfiguration.size());
+    log.info("Endpoint configurations found: {}", endpointConfiguration.size());
 
     endpointConfiguration.forEach(
         configuration -> {
