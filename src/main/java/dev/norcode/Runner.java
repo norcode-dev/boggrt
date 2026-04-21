@@ -28,15 +28,24 @@ public class Runner {
     log.info("Installing routes");
     Set<Path> paths = configurationLoader.get();
     Set<EndpointConfiguration> endpointConfiguration = endpointConfigurationParser.parse(paths);
-    router
-        .route()
-        .path("/hello")
-        .method(endpointConfiguration.stream().findFirst().get().method())
-        .handler(
-            routingContext ->
-                routingContext
-                    .response()
-                    .putHeader("content-type", "application/json")
-                    .end(endpointConfiguration.stream().findFirst().get().response()));
+
+    if (endpointConfiguration.isEmpty()) {
+      log.error("No endpoint configuration found");
+    }
+
+    log.info("Found {} endpoint configuration(s)", endpointConfiguration.size());
+
+    endpointConfiguration.forEach(
+        configuration ->
+            router
+                .route()
+                .path(configuration.path())
+                .method(configuration.method())
+                .handler(
+                    routingContext ->
+                        routingContext
+                            .response()
+                            .putHeader("content-type", "application/json")
+                            .end(configuration.response())));
   }
 }
