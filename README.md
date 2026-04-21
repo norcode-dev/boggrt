@@ -10,8 +10,8 @@ It runs in a container, so you can run it as a standalone service, integrate it 
 
 - Configure multiple mock API endpoints.
 - Define specific conditions for incoming requests (method, path, body fields).
-- Supports JSONPath-like syntax for request validation.
-- Returns configured mock responses when conditions are met, otherwise returns 404.
+- Supports nested field paths, array indexes, and wildcards such as `items[*].sku` for request validation.
+- Returns configured mock responses when requests match, returns `404` when no endpoint matches or conditions fail, and returns `405` when the path exists but the HTTP method does not match.
 
 ## Configuration
 Boggrt uses JSON configuration files to define the mock API endpoints and conditions.
@@ -21,6 +21,15 @@ Boggrt uses JSON configuration files to define the mock API endpoints and condit
 
 > [!IMPORTANT]  
 > For detailed endpoint configuration options, see [Configuration Specification](spec.md).
+
+### Configuration Basics
+
+- Boggrt loads endpoint definitions from `.json` files in `/resources` by default.
+- You can override the source directory with the `BOGGRT_SOURCE` environment variable.
+- Each `.json` file may contain a single endpoint object or an array of endpoint objects.
+- Each endpoint matches by `method` and `path`, and optional `conditions` are combined with logical `AND`.
+- Field paths are resolved from the request JSON root using dot notation, array indexes, and `[*]` wildcards.
+- Supported operators are `equals`, `contains`, `greaterThan`, `lessThan`, `isEmpty`, `sizeEquals`, `sizeGreaterThan`, `sizeLessThan`, and `exists`.
 
 ### Configuration Example: Single Endpoint Without Conditions
 
