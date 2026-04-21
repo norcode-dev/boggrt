@@ -1,6 +1,6 @@
 package dev.norcode;
 
-import dev.norcode.configuration.Configuration;
+import dev.norcode.configuration.EndpointConfiguration;
 import dev.norcode.configuration.ConfigurationLoader;
 import io.quarkus.runtime.StartupEvent;
 import io.vertx.ext.web.Router;
@@ -17,10 +17,10 @@ public class Runner {
     void installRoute(@Observes StartupEvent startupEvent, Router router) {
 
         log.info("Installing routes");
-        Configuration configuration = configurationLoader.get();
+        EndpointConfiguration endpointConfiguration = configurationLoader.get();
         router.route()
                 .path("/hello")
-                .method(configuration.method())
+                .method(endpointConfiguration.method())
                 .handler(
                         routingContext -> routingContext.response()
                                 .putHeader("content-type", "application/json")
