@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.norcode.configuration.EndpointConfiguration;
 import io.vertx.core.http.HttpMethod;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @ApplicationScoped
 public class FileEndpointConfigurationParser implements EndpointConfigurationParser<Path> {
 
@@ -21,6 +24,7 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
         .map(
             path -> {
               try {
+                log.info("Parsing endpoint configuration from {}", path);
                 JsonNode jsonNode = objectMapper.readTree(path.toFile());
                 if (jsonNode.isArray()) {
                   return jsonNode
