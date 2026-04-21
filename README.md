@@ -3,6 +3,9 @@
 Boggrt is a mock API server that serves responses based on configurable endpoints and conditions. The goal is to provide
 a simple and flexible way to mock API responses for testing and development purposes.
 
+It runs in a container, so you can run it as a standalone service or integrate it into your existing integration tests
+with Testcontainers for example.
+
 ## Features
 
 - Configure multiple mock API endpoints.
@@ -10,4 +13,56 @@ a simple and flexible way to mock API responses for testing and development purp
 - Supports JSONPath-like syntax for request validation.
 - Returns configured mock responses when conditions are met, otherwise returns 404.
 
+## Usage
+
+Running Boggrt is quite straightforward: pull the image [norcodedev/boggrt](link TBD) from Docker Hub and configure the 
+`BOGGRT_SOURCE` env variable pointing the folder containing the JSON configuration files.
+
 For detailed configuration options, see [Configuration Specification](spec.md).
+
+### Configuration Example: Single Endpoint Without Conditions
+
+The following configuration will return an HTTP 200 response for all requests to `/health/mock`.
+
+Configuration:
+
+```json
+{
+  "method": "GET",
+  "path": "/health/mock",
+  "response": {
+    "status": "ok"
+  }
+}
+```
+
+Result:
+
+- HTTP `200`
+- Body: `{"status":"ok"}`
+
+### Configuration Example: Single Endpoint With Conditions
+
+The following configuration will return an HTTP 202 response for all requests to `/orders/validate` where the request body
+contains a `customer.lastName` field with the value `Doe`.
+
+Configuration:
+
+```json
+{
+  "method": "POST",
+  "path": "/orders/validate",
+  "conditions": [
+    { "field": "customer.lastName", "operator": "equals", "value": "Doe" }
+  ],
+  "responseStatus": 202,
+  "response": {
+    "status": "accepted",
+    "code": "MOCK-OK"
+  }
+}
+```
+
+Result:
+- HTTP `202`
+- Body: `{"status":"accepted","code":"MOCK-OK"}`
