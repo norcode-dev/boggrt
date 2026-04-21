@@ -1,5 +1,19 @@
 {
   "method": "GET",
   "path": "/hello",
-  "response": "Hello from Quarkus!"
+  "response": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "age": 30,
+    "options": [
+      {
+        "title": "title 1",
+        "description": "description 1"
+      },
+      {
+        "title": "title 2",
+        "description": "description 2"
+      }
+    ]
+  }
 }

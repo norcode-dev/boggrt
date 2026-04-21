@@ -23,7 +23,9 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
               try {
                 JsonNode jsonNode = objectMapper.readTree(path.toFile());
                 return new EndpointConfiguration(
-                    HttpMethod.GET, "/hello", jsonNode.get("response").asText());
+                    HttpMethod.valueOf(jsonNode.get("method").asText()),
+                    jsonNode.get("path").asText(),
+                    jsonNode.get("response").toPrettyString());
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
