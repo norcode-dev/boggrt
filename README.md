@@ -19,7 +19,7 @@ You can run your application in dev mode that enables live coding using:
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+> **_NOTE:_** Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
 
 ## Packaging and running the application
 
@@ -56,16 +56,14 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 ./mvnw package -Dnative -Dquarkus.native.container-build=true
 ```
 
-## Build docker image 
+You can then execute your native executable with: `./target/boggrt-1.0.0-SNAPSHOT-runner`
+
+## Build the Docker image 
 ```shell script
 docker build -f src/main/docker/Dockerfile.native-micro -t quarkus/boggrt .
 ```
 
-## Running the Docker image with the native executable
+## Running the Docker image
 ```shell script
 docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 8080:8080 quarkus/boggrt
 ```
-
-You can then execute your native executable with: `./target/boggrt-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
