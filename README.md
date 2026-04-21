@@ -60,7 +60,7 @@ You can then execute your native executable with: `./target/boggrt-1.0.0-SNAPSHO
 
 ## Build the Docker image 
 ```shell script
-docker build -f src/main/docker/Dockerfile.native-micro -t quarkus/boggrt .
+docker build -f src/main/docker/Dockerfile.native-micro -t norcode/boggrt .
 ```
 
 ## Running the Docker image
