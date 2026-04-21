@@ -1,6 +1,7 @@
 {
   "method": "GET",
-  "path": "/hello",
+  "path": "/hello1",
+  "condition": "TODO",
   "response": {
     "firstName": "John",
     "lastName": "Doe",

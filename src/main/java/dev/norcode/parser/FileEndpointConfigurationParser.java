@@ -22,14 +22,25 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
             path -> {
               try {
                 JsonNode jsonNode = objectMapper.readTree(path.toFile());
-                return new EndpointConfiguration(
-                    HttpMethod.valueOf(jsonNode.get("method").asText()),
-                    jsonNode.get("path").asText(),
-                    jsonNode.get("response").toPrettyString());
+                if (jsonNode.isArray()) {
+                  return jsonNode
+                      .valueStream()
+                      .map(FileEndpointConfigurationParser::parseEndpointConfiguration)
+                      .collect(Collectors.toSet());
+                }
+                return Set.of(parseEndpointConfiguration(jsonNode));
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
             })
+        .flatMap(Set::stream)
         .collect(Collectors.toSet());
+  }
+
+  private static EndpointConfiguration parseEndpointConfiguration(JsonNode jsonNode) {
+    return new EndpointConfiguration(
+        HttpMethod.valueOf(jsonNode.get("method").asText()),
+        jsonNode.get("path").asText(),
+        jsonNode.get("response").toPrettyString());
   }
 }

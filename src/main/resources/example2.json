@@ -1,0 +1,42 @@
+[
+  {
+    "method": "GET",
+    "path": "/hello2",
+    "condition": "TODO",
+    "response": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "age": 30,
+      "options": [
+        {
+          "title": "title 1",
+          "description": "description 1"
+        },
+        {
+          "title": "title 2",
+          "description": "description 2"
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/hello3",
+    "condition": "TODO",
+    "response": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "age": 30,
+      "options": [
+        {
+          "title": "title 1",
+          "description": "description 1"
+        },
+        {
+          "title": "title 2",
+          "description": "description 2"
+        }
+      ]
+    }
+  }
+]
