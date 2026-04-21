@@ -11,7 +11,11 @@ Boggrt returns a configured response when both of these are true:
 
 If an endpoint matches and `responseStatus` is omitted, Boggrt returns HTTP `200`.
 
-If no endpoint matches, or any condition fails, Boggrt returns HTTP `404 Not Found` with body `Response not found.`.
+If no endpoint matches, Boggrt returns HTTP `404 Not Found` with body `Response not found.`.
+
+If method and path match but at least one condition fails, Boggrt returns HTTP `404 Not Found` with body `Response not found.`.
+
+If the path exists but the HTTP method does not match, Boggrt returns HTTP `405 Method Not Allowed`.
 
 Successful responses are sent with `Content-Type: application/json`.
 

@@ -76,7 +76,7 @@ Result:
 To run Boggrt in standalone mode, you need to mount a volume with the configuration files pointing to the `/resources` folder.
 
 ```shell script
-docker run -d ./src/main/resources:/resources --rm -p 8080:8080 norcodedev/boggrt
+docker run -d -v ./src/main/resources:/resources --rm -p 8080:8080 norcodedev/boggrt
 ```
 
 You can change the folder where the configuration files are loaded by setting the `BOGGRT_SOURCE` env variable.
@@ -86,7 +86,7 @@ docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 80
 
 ### Running Boggrt: Spring Boot + Testcontainers
 
-The Demo application exposes an endpoint called `/demo/hello` wich calls an external API defined in `demo.external-url` property.
+The Demo application exposes an endpoint called `/demo/hello` which calls an external API defined in `demo.external-url` property.
 
 The following example shows how to integrate Boggrt in a Spring Boot application that uses `Testcontainers` for integration testing.
 
@@ -109,7 +109,7 @@ The following example shows how to integrate Boggrt in a Spring Boot application
 }
 ```
 > [!NOTE]
-> The name of the configuration file does not matter and can be placed anywhere in the `resources` folder.
+> The configuration file name does not matter and it can be placed anywhere in the mounted folder copied to `/resources` (for this example, `src/test/resources/test-data`).
 
 > [!TIP]
 > You can find more information about the configuration options in the previous section.
@@ -166,10 +166,10 @@ class DemoControllerIntegrationTest extends TestcontainersConfiguration {
 ```
 
 ### Running Boggrt: Spring Boot + Docker Compose
-During the development you may want to mock the external API calls, you can do it easily with Docker Compose and Boggrt.
+During development you may want to mock external API calls. You can do it with Docker Compose and Boggrt.
 
 > [!NOTE]  
->The advantage of using Boggrt is that you can reuse the same configuration files used in the integration tests.
+> The advantage of using Boggrt is that you can reuse the same configuration files used in the integration tests.
 
 The following example shows how to automatically run Docker Compose and Boggrt when starting the application.
 
