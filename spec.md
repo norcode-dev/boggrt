@@ -9,6 +9,8 @@ Boggrt serves a configured response when:
 1. HTTP method and path match a configured endpoint.
 2. All endpoint conditions pass (if conditions are configured).
 
+Each endpoint may also define an optional success response status using `responseStatus`. If omitted, Boggrt uses HTTP `200`.
+
 If no endpoint matches, or any condition fails, Boggrt returns `404 Not Found`.
 
 ## 2. Where Configuration Is Loaded From
@@ -27,9 +29,9 @@ Each `.json` file can contain either:
 For each incoming request:
 
 1. Boggrt checks method + path against configured endpoints.
-2. If the endpoint has no conditions (missing or empty array), Boggrt returns the configured response with HTTP `200`.
+2. If the endpoint has no conditions (missing or empty array), Boggrt returns the configured response with HTTP `responseStatus` (or `200` if omitted).
 3. If conditions exist, Boggrt parses the request body as JSON and evaluates all conditions.
-4. If every condition passes, Boggrt returns HTTP `200` with the configured response.
+4. If every condition passes, Boggrt returns HTTP `responseStatus` (or `200` if omitted) with the configured response.
 5. If any condition fails (or body JSON cannot be parsed), Boggrt returns HTTP `404` with body `Response not found.`
 
 Successful responses are sent with `Content-Type: application/json`.
@@ -49,6 +51,7 @@ Successful responses are sent with `Content-Type: application/json`.
       "value": "Doe"
     }
   ],
+  "responseStatus": 202,
   "response": {
     "status": "accepted"
   }
@@ -60,6 +63,7 @@ Successful responses are sent with `Content-Type: application/json`.
 | `method` | String | Yes | Must be a valid Vert.x `HttpMethod` value (for example `GET`, `POST`, `PUT`, `DELETE`). Use uppercase names. |
 | `path` | String | Yes | Route path to match (for example `/orders/validate`). |
 | `conditions` | Array\<Condition\> | No | If missing or empty, no condition checks are performed. |
+| `responseStatus` | Number | No | HTTP status code returned when the endpoint matches and conditions pass. If omitted, default is `200`. |
 | `response` | Any JSON value | Yes | Returned as the response body when endpoint matches. |
 
 ### 4.2 Condition Object
@@ -174,6 +178,7 @@ Configuration:
     { "field": "traceId", "operator": "exists", "value": true },
     { "field": "notes", "operator": "isEmpty", "value": true }
   ],
+  "responseStatus": 202,
   "response": {
     "status": "accepted",
     "code": "MOCK-OK"
@@ -195,7 +200,7 @@ curl -i \
   }'
 ```
 
-Result: HTTP `200` with configured response.
+Result: HTTP `202` with configured response.
 
 Non-matching request (`items[1].sku` does not contain `SKU-`):
 
@@ -220,6 +225,7 @@ Result: HTTP `404` with `Response not found.`
   {
     "method": "GET",
     "path": "/hello2",
+    "responseStatus": 201,
     "response": {
       "firstName": "John",
       "lastName": "Doe"
