@@ -81,5 +81,21 @@
     "response": {
       "status": "count-max-ok"
     }
+  },
+  {
+    "method": "POST",
+    "path": "/orders/validate/array-order",
+    "responseStatus": 202,
+    "conditions": [
+      {
+        "field": "items[1].sku",
+        "operator": "contains",
+        "value": "SKU-002"
+      }
+    ],
+    "response": {
+      "status": "accepted",
+      "code": "MOCK-OK"
+    }
   }
 ]

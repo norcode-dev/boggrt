@@ -1,16 +1,26 @@
 package dev.norcode.evaluator;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import dev.norcode.configuration.Condition;
 import dev.norcode.configuration.ConditionOperator;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ConditionEvaluator {
+
+  private static final Configuration JSON_PATH_CONFIGURATION =
+      Configuration.builder()
+          .jsonProvider(new JacksonJsonNodeJsonProvider())
+          .options(Option.ALWAYS_RETURN_LIST, Option.SUPPRESS_EXCEPTIONS)
+          .build();
 
   public static boolean isRequestValid(List<Condition> conditions, String requestBody) {
     if (conditions == null || conditions.isEmpty()) {
@@ -23,7 +33,7 @@ public class ConditionEvaluator {
     }
 
     for (Condition condition : conditions) {
-      if (!evaluate(condition, requestJson.get())) {
+      if (!evaluate(condition, requestBody)) {
         log.debug("Condition failed: {}", condition);
         return false;
       }
@@ -36,7 +46,7 @@ public class ConditionEvaluator {
     return !isRequestValid(conditions, requestBody);
   }
 
-  private static boolean evaluate(Condition condition, JsonNode requestJson) {
+  private static boolean evaluate(Condition condition, String requestBody) {
     if (condition == null
         || condition.field() == null
         || condition.field().isBlank()
@@ -44,98 +54,21 @@ public class ConditionEvaluator {
       return false;
     }
 
-    List<JsonNode> fieldValues = resolveField(condition.field(), requestJson);
+    ArrayNode nodes =
+        JsonPath.using(JSON_PATH_CONFIGURATION)
+            .parse(requestBody)
+            .read("$.".concat(condition.field()));
 
-    if (condition.field().contains("[*]")) {
-      if (fieldValues.isEmpty()) {
-        return false;
-      }
-
-      for (JsonNode fieldValue : fieldValues) {
-        if (!evaluateSingle(condition.operator(), fieldValue, condition.value())) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    if (fieldValues.isEmpty()) {
+    if (nodes.isEmpty()) {
       return false;
     }
 
-    return evaluateSingle(condition.operator(), fieldValues.getFirst(), condition.value());
-  }
-
-  private static List<JsonNode> resolveField(String fieldPath, JsonNode requestJson) {
-    List<JsonNode> matchedNodes = List.of(requestJson);
-
-    for (String segment : fieldPath.split("\\.")) {
-      matchedNodes = resolveSegmentForAllNodes(matchedNodes, segment);
-      if (matchedNodes.isEmpty()) {
-        return List.of();
-      }
-    }
-
-    return matchedNodes;
-  }
-
-  private static List<JsonNode> resolveSegmentForAllNodes(List<JsonNode> nodes, String segment) {
-    List<JsonNode> resolvedNodes = new ArrayList<>();
     for (JsonNode node : nodes) {
-      resolvedNodes.addAll(resolveSegment(node, segment));
-    }
-    return resolvedNodes;
-  }
-
-  private static List<JsonNode> resolveSegment(JsonNode node, String segment) {
-    if (segment.endsWith("]") && segment.contains("[")) {
-      return resolveArraySegment(node, segment);
-    }
-
-    return resolveObjectField(node, segment);
-  }
-
-  private static List<JsonNode> resolveObjectField(JsonNode node, String fieldName) {
-    JsonNode next = node.get(fieldName);
-    if (next == null) {
-      return List.of();
-    }
-
-    return List.of(next);
-  }
-
-  private static List<JsonNode> resolveArraySegment(JsonNode node, String segment) {
-    int start = segment.indexOf('[');
-    int end = segment.lastIndexOf(']');
-
-    if (start < 0 || end != segment.length() - 1 || start >= end) {
-      return List.of();
-    }
-
-    String fieldName = segment.substring(0, start);
-    String indexExpression = segment.substring(start + 1, end);
-
-    JsonNode arrayNode = fieldName.isEmpty() ? node : node.get(fieldName);
-    if (arrayNode == null || !arrayNode.isArray()) {
-      return List.of();
-    }
-
-    if ("*".equals(indexExpression)) {
-      List<JsonNode> values = new ArrayList<>();
-      arrayNode.forEach(values::add);
-      return values;
-    }
-
-    try {
-      int index = Integer.parseInt(indexExpression);
-      if (index < 0 || !arrayNode.has(index)) {
-        return List.of();
+      if (evaluateSingle(condition.operator(), node, condition.value())) {
+        return true;
       }
-
-      return List.of(arrayNode.get(index));
-    } catch (NumberFormatException e) {
-      return List.of();
     }
+    return false;
   }
 
   private static boolean evaluateSingle(

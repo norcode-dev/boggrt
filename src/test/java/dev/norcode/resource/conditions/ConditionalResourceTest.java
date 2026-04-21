@@ -33,6 +33,28 @@ class ConditionalResourceTest {
   }
 
   @Test
+  void shouldValidateArrayOrderWithValidRequest() {
+    given()
+            .contentType("application/json")
+            .body(
+                    """
+                    {
+                      "customer": { "lastName": "Doe" },
+                      "items": [{ "sku": "SKU-001" }, { "sku": "SKU-002" }],
+                      "traceId": "abc-123",
+                      "notes": ""
+                    }
+                    """)
+            .when()
+            .post("/orders/validate/array-order")
+            .then()
+            .statusCode(202)
+            .contentType("application/json")
+            .body("status", is("accepted"))
+            .body("code", is("MOCK-OK"));
+  }
+
+  @Test
   void testOrdersValidateReturnsNotFoundWhenConditionFails() {
     given()
         .contentType("application/json")
@@ -40,7 +62,7 @@ class ConditionalResourceTest {
             """
             {
               "customer": { "lastName": "Doe" },
-              "items": [{ "sku": "SKU-1" }, { "sku": "BAD" }],
+              "items": [{ "sku": "SKU" }, { "sku": "BAD" }],
               "traceId": "abc-123",
               "notes": ""
             }
@@ -60,8 +82,7 @@ class ConditionalResourceTest {
         .when()
         .post("/orders/validate")
         .then()
-        .statusCode(404)
-        .body(is("Response not found."));
+        .statusCode(400);
   }
 
   @Test

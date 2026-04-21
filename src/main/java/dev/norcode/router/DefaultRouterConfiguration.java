@@ -35,7 +35,15 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
               .path(configuration.path())
               .method(configuration.method())
               .handler(BodyHandler.create())
-              .handler(routingContext -> handleConfiguredRoute(configuration, routingContext));
+              .handler(
+                  routingContext -> {
+                    try {
+                      handleConfiguredRoute(configuration, routingContext);
+                    } catch (Exception e) {
+                      log.error("Failed to handle configured route", e);
+                      routingContext.fail(400);
+                    }
+                  });
         });
   }
 
@@ -61,7 +69,8 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
       return false;
     }
 
-    String requestBody = routingContext.body() != null ? routingContext.body().asString() : "";
+    String requestBody =
+        routingContext.body() != null ? routingContext.body().asJsonObject().encode() : "";
     return ConditionEvaluator.isRequestInvalid(configuration.conditions(), requestBody);
   }
 }
