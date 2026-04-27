@@ -80,6 +80,13 @@ Result:
 
 ## Usage
 
+### Example Project
+
+For a complete example showing how to use Boggrt in a real project, see
+[boggrt-example](https://github.com/norcode-dev/boggrt-example).
+
+It demonstrates how to integrate Boggrt for local development and testing scenarios.
+
 ### Running Boggrt: Standalone
 
 To run Boggrt in standalone mode, you need to mount a volume with the configuration files pointing to the `/resources` folder.
