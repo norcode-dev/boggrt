@@ -13,6 +13,16 @@ It runs in a container, so you can run it as a standalone service, integrate it 
 - Supports nested field paths, array indexes, and wildcards such as `items[*].sku` for request validation.
 - Returns configured mock responses when requests match, returns `404` when no endpoint matches or conditions fail, and returns `405` when the path exists but the HTTP method does not match.
 
+## Quick Start
+
+The easiest way to get started with Boggrt is to use the Docker image available on [Docker Hub](https://hub.docker.com/r/norcodedev/boggrt).
+
+```shell
+docker run -d -v ./src/main/resources:/resources --rm -p 8080:8080 norcodedev/boggrt
+```
+
+Provide one or more JSON configuration files in the mounted `/resources` folder and Boggrt will serve the configured mock endpoints.
+
 ## Configuration
 Boggrt uses JSON configuration files to define the mock API endpoints and conditions.
 
@@ -91,12 +101,12 @@ It demonstrates how to integrate Boggrt for local development and testing scenar
 
 To run Boggrt in standalone mode, you need to mount a volume with the configuration files pointing to the `/resources` folder.
 
-```shell script
+```shell
 docker run -d -v ./src/main/resources:/resources --rm -p 8080:8080 norcodedev/boggrt
 ```
 
 You can change the folder where the configuration files are loaded by setting the `BOGGRT_SOURCE` env variable.
-```shell script
+```shell
 docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 8080:8080 norcodedev/boggrt
 ```
 
