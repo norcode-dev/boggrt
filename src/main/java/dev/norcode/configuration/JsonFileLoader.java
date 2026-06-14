@@ -1,5 +1,6 @@
 package dev.norcode.configuration;
 
+import io.smallrye.common.annotation.Identifier;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,11 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ApplicationScoped
-public class FileLoader implements ConfigurationLoader {
+@Identifier("json")
+public class JsonFileLoader implements ConfigurationLoader {
 
   private final AppConfiguration appConfiguration;
 
-  public FileLoader(AppConfiguration appConfiguration) {
+  public JsonFileLoader(AppConfiguration appConfiguration) {
     this.appConfiguration = appConfiguration;
   }
 

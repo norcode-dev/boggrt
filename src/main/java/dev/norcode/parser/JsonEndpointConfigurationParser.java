@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.norcode.configuration.Condition;
 import dev.norcode.configuration.ConditionOperator;
 import dev.norcode.configuration.EndpointConfiguration;
+import io.smallrye.common.annotation.Identifier;
 import io.vertx.core.http.HttpMethod;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
@@ -19,7 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ApplicationScoped
-public class FileEndpointConfigurationParser implements EndpointConfigurationParser<Path> {
+@Identifier("json")
+public class JsonEndpointConfigurationParser implements EndpointConfigurationParser<Path> {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
