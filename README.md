@@ -12,6 +12,7 @@ It runs in a container, so you can run it as a standalone service, integrate it 
 - Define specific conditions for incoming requests (method, path, body fields).
 - Supports nested field paths, array indexes, and wildcards such as `items[*].sku` for request validation.
 - Returns configured mock responses when requests match, returns `404` when no endpoint matches or conditions fail, and returns `405` when the path exists but the HTTP method does not match.
+- Import OpenAPI 3.x specifications and serve generated sample responses (powered by Datafaker).
 
 ## Quick Start
 
@@ -36,10 +37,12 @@ Boggrt uses JSON configuration files to define the mock API endpoints and condit
 
 - Boggrt loads endpoint definitions from `.json` files in `/resources` by default.
 - You can override the source directory with the `BOGGRT_SOURCE` environment variable.
+- Boggrt also loads OpenAPI 3.x specifications (`.yaml`, `.yml`, `.json`) from `/openapi` by default (override with `BOGGRT_OPENAPI_SOURCE`). Each operation becomes a mock endpoint whose response body is generated from the schema. The OpenAPI folder is optional — if missing, only JSON endpoints are served.
 - Each `.json` file may contain a single endpoint object or an array of endpoint objects.
 - Each endpoint matches by `method` and `path`, and optional `conditions` are combined with logical `AND`.
 - Field paths are resolved from the request JSON root using dot notation, array indexes, and `[*]` wildcards.
 - Supported operators are `equals`, `contains`, `greaterThan`, `lessThan`, `isEmpty`, `sizeEquals`, `sizeGreaterThan`, `sizeLessThan`, and `exists`.
+- When the same `(method, path)` is declared in both a JSON file and an OpenAPI spec, **the JSON file wins** and a warning is logged.
 
 ### Configuration Example: Single Endpoint Without Conditions
 
@@ -109,6 +112,15 @@ You can change the folder where the configuration files are loaded by setting th
 ```shell
 docker run -d --env BOGGRT_SOURCE=/json -v ./src/main/resources:/json --rm -p 8080:8080 norcodedev/boggrt
 ```
+
+To also import OpenAPI specs from a separate folder, mount that folder to `/openapi` (or override `BOGGRT_OPENAPI_SOURCE`):
+```shell
+docker run -d \
+  -v ./src/main/resources:/resources \
+  -v ./openapi-specs:/openapi \
+  --rm -p 8080:8080 norcodedev/boggrt
+```
+Each operation in every spec becomes a mock endpoint. Response bodies are generated from the response schema — fields with `example` or `default` keep those values, everything else is filled with Datafaker. Path parameters like `/pets/{petId}` are reachable via the same URL (`GET /pets/123`).
 
 ### Running Boggrt: Spring Boot + Testcontainers
 
