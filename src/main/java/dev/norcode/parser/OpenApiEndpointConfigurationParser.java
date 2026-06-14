@@ -18,6 +18,7 @@ import io.vertx.core.http.HttpMethod;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -75,17 +76,18 @@ public class OpenApiEndpointConfigurationParser implements EndpointConfiguration
     Set<EndpointConfiguration> endpoints = new HashSet<>();
     for (Map.Entry<String, PathItem> pathEntry : openAPI.getPaths().entrySet()) {
       String routePath = translatePathParameters(pathEntry.getKey());
-      PathItem item = pathEntry.getValue();
-      addEndpoint(endpoints, routePath, HttpMethod.GET, item.getGet());
-      addEndpoint(endpoints, routePath, HttpMethod.POST, item.getPost());
-      addEndpoint(endpoints, routePath, HttpMethod.PUT, item.getPut());
-      addEndpoint(endpoints, routePath, HttpMethod.DELETE, item.getDelete());
-      addEndpoint(endpoints, routePath, HttpMethod.PATCH, item.getPatch());
-      addEndpoint(endpoints, routePath, HttpMethod.HEAD, item.getHead());
-      addEndpoint(endpoints, routePath, HttpMethod.OPTIONS, item.getOptions());
-      addEndpoint(endpoints, routePath, HttpMethod.TRACE, item.getTrace());
+      pathEntry
+          .getValue()
+          .readOperationsMap()
+          .forEach(
+              (method, operation) ->
+                  addEndpoint(endpoints, routePath, toVertxMethod(method), operation));
     }
     return endpoints;
+  }
+
+  private static HttpMethod toVertxMethod(PathItem.HttpMethod method) {
+    return HttpMethod.valueOf(method.name());
   }
 
   private void addEndpoint(
@@ -109,7 +111,7 @@ public class OpenApiEndpointConfigurationParser implements EndpointConfiguration
     }
     return responses.entrySet().stream()
         .filter(e -> isSuccessStatus(e.getKey()))
-        .min((a, b) -> Integer.compare(statusOrMax(a.getKey()), statusOrMax(b.getKey())))
+        .min(Comparator.comparingInt(e -> statusOrMax(e.getKey())))
         .map(Map.Entry::getValue)
         .orElseGet(() -> responses.values().iterator().next());
   }
@@ -154,23 +156,23 @@ public class OpenApiEndpointConfigurationParser implements EndpointConfiguration
     if (response == null) {
       return null;
     }
-    Content content = response.getContent();
+    MediaType mediaType = findJsonMediaType(response.getContent());
+    return mediaType != null ? mediaType.getSchema() : null;
+  }
+
+  private MediaType findJsonMediaType(Content content) {
     if (content == null || content.isEmpty()) {
       return null;
     }
-    MediaType mediaType = content.get(JSON_MEDIA_TYPE);
-    if (mediaType == null) {
-      mediaType =
-          content.entrySet().stream()
-              .filter(e -> e.getKey() != null && e.getKey().contains("json"))
-              .map(Map.Entry::getValue)
-              .findFirst()
-              .orElse(null);
+    MediaType exact = content.get(JSON_MEDIA_TYPE);
+    if (exact != null) {
+      return exact;
     }
-    if (mediaType == null) {
-      return null;
-    }
-    return mediaType.getSchema();
+    return content.entrySet().stream()
+        .filter(e -> e.getKey() != null && e.getKey().contains("json"))
+        .map(Map.Entry::getValue)
+        .findFirst()
+        .orElse(null);
   }
 
   static String translatePathParameters(String openApiPath) {

@@ -44,15 +44,6 @@ public class SchemaSampleGenerator {
     }
 
     String type = resolveType(schema);
-
-    if (type == null) {
-      if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
-        type = "object";
-      } else if (schema.getItems() != null) {
-        type = "array";
-      }
-    }
-
     if (type == null) {
       return NODES.nullNode();
     }
@@ -80,15 +71,29 @@ public class SchemaSampleGenerator {
     return null;
   }
 
+  /**
+   * Determines the effective type of the schema, falling back to inference from its shape when no
+   * explicit {@code type}/{@code types} is declared.
+   */
   private String resolveType(Schema<?> schema) {
     if (schema.getType() != null) {
       return schema.getType();
     }
     if (schema.getTypes() != null) {
-      return schema.getTypes().stream()
-          .filter(t -> t != null && !"null".equals(t))
-          .findFirst()
-          .orElse(null);
+      String declared =
+          schema.getTypes().stream()
+              .filter(t -> t != null && !"null".equals(t))
+              .findFirst()
+              .orElse(null);
+      if (declared != null) {
+        return declared;
+      }
+    }
+    if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
+      return "object";
+    }
+    if (schema.getItems() != null) {
+      return "array";
     }
     return null;
   }
