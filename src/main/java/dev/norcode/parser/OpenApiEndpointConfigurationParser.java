@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Identifier("openapi")
 public class OpenApiEndpointConfigurationParser implements EndpointConfigurationParser<Path> {
 
-  private static final Pattern PATH_PARAM = Pattern.compile("\\{([^}]+)\\}");
+  private static final Pattern PATH_PARAM = Pattern.compile("\\{([^}]+)}");
   private static final String JSON_MEDIA_TYPE = "application/json";
 
   private final SchemaSampleGenerator schemaSampleGenerator;
