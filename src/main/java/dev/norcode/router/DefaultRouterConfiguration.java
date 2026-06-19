@@ -53,21 +53,8 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
   private void handleConfiguredRoute(
       EndpointConfiguration configuration, RoutingContext routingContext) {
 
-    if (configuration.hasValidConditions()) {
-      String requestBody = routingContext.body() != null ? routingContext.body().asString() : "";
-      Optional<JsonNode> requestJson = RequestParser.parseRequestBody(requestBody);
-
-      if (requestJson.isEmpty()) {
-        log.debug("Invalid request body for {} {}", configuration.method(), configuration.path());
-        routingContext.response().setStatusCode(400).end("Invalid request body.");
-        return;
-      }
-
-      if (!ConditionEvaluator.isRequestValid(configuration.conditions(), requestJson.get())) {
-        log.debug("Conditions not met for {} {}", configuration.method(), configuration.path());
-        routingContext.response().setStatusCode(404).end("Response not found.");
-        return;
-      }
+    if (configuration.hasValidConditions() && !conditionsSatisfied(configuration, routingContext)) {
+      return;
     }
 
     routingContext
@@ -75,5 +62,25 @@ public class DefaultRouterConfiguration implements RouterConfiguration {
         .setStatusCode(configuration.resolvedResponseStatus())
         .putHeader("content-type", "application/json")
         .end(configuration.response());
+  }
+
+  private boolean conditionsSatisfied(
+      EndpointConfiguration configuration, RoutingContext routingContext) {
+    String requestBody = routingContext.body() != null ? routingContext.body().asString() : "";
+    Optional<JsonNode> requestJson = RequestParser.parseRequestBody(requestBody);
+
+    if (requestJson.isEmpty()) {
+      log.debug("Invalid request body for {} {}", configuration.method(), configuration.path());
+      routingContext.response().setStatusCode(400).end("Invalid request body.");
+      return false;
+    }
+
+    if (!ConditionEvaluator.isRequestValid(configuration.conditions(), requestJson.get())) {
+      log.debug("Conditions not met for {} {}", configuration.method(), configuration.path());
+      routingContext.response().setStatusCode(404).end("Response not found.");
+      return false;
+    }
+
+    return true;
   }
 }
