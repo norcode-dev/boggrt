@@ -2,49 +2,33 @@ package dev.norcode.configuration;
 
 import io.smallrye.common.annotation.Identifier;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import lombok.extern.slf4j.Slf4j;
+import java.util.function.Predicate;
 
-@Slf4j
 @ApplicationScoped
 @Identifier("openapi")
-public class OpenApiFileLoader implements ConfigurationLoader {
+public class OpenApiFileLoader extends AbstractFileLoader {
 
   private static final Set<String> SUPPORTED_EXTENSIONS = Set.of(".yaml", ".yml", ".json");
 
-  private final AppConfiguration appConfiguration;
-
   public OpenApiFileLoader(AppConfiguration appConfiguration) {
-    this.appConfiguration = appConfiguration;
+    super(appConfiguration);
   }
 
   @Override
-  public Set<Path> get() {
-    String folder = appConfiguration.openapiFolderPath();
-    log.info("Loading OpenAPI specifications from {}", folder);
+  protected String folder() {
+    return appConfiguration.openapiFolderPath();
+  }
 
-    Path folderPath = Paths.get(folder);
-    if (!Files.exists(folderPath)) {
-      log.info("OpenAPI folder {} does not exist; skipping OpenAPI import", folder);
-      return Set.of();
-    }
+  @Override
+  protected String description() {
+    return "OpenAPI specifications";
+  }
 
-    try (Stream<Path> stream = Files.list(folderPath)) {
-      return stream
-          .filter(path -> !Files.isDirectory(path))
-          .filter(OpenApiFileLoader::hasSupportedExtension)
-          .map(Path::toAbsolutePath)
-          .collect(Collectors.toSet());
-    } catch (IOException e) {
-      log.error("Failed to load OpenAPI specifications", e);
-      throw new LoaderException(e);
-    }
+  @Override
+  protected Predicate<Path> fileFilter() {
+    return OpenApiFileLoader::hasSupportedExtension;
   }
 
   private static boolean hasSupportedExtension(Path path) {
