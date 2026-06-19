@@ -24,7 +24,14 @@ public class JsonFileLoader implements ConfigurationLoader {
 
   @Override
   public Set<Path> get() {
-    log.info("Loading endpoint configurations from {}", appConfiguration.endpointsFolderPath());
+    String folder = appConfiguration.endpointsFolderPath();
+    log.info("Loading endpoint configurations from {}", folder);
+
+    Path folderPath = Paths.get(folder);
+    if (!Files.exists(folderPath)) {
+      log.info("Configuration folder {} does not exist; skipping import", folder);
+      return Set.of();
+    }
 
     try (Stream<Path> stream = Files.list(Paths.get(appConfiguration.endpointsFolderPath()))) {
       return stream
