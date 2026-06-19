@@ -3,6 +3,7 @@ package dev.norcode.evaluator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
@@ -28,12 +29,23 @@ public class ConditionEvaluator {
     }
 
     Optional<JsonNode> requestJson = RequestParser.parseRequestBody(requestBody);
-    if (requestJson.isEmpty()) {
+    return requestJson.isPresent() && isRequestValid(conditions, requestJson.get());
+  }
+
+  public static boolean isRequestValid(List<Condition> conditions, JsonNode requestJson) {
+    if (conditions == null || conditions.isEmpty()) {
+      return true;
+    }
+    if (requestJson == null || requestJson.isNull() || requestJson.isMissingNode()) {
       return false;
     }
 
+    // Parse the body once and reuse the document for every condition. The
+    // JacksonJsonNodeJsonProvider accepts the already-parsed JsonNode directly.
+    DocumentContext document = JsonPath.using(JSON_PATH_CONFIGURATION).parse(requestJson);
+
     for (Condition condition : conditions) {
-      if (!evaluate(condition, requestBody)) {
+      if (!evaluate(condition, document)) {
         log.debug("Condition failed: {}", condition);
         return false;
       }
@@ -46,7 +58,7 @@ public class ConditionEvaluator {
     return !isRequestValid(conditions, requestBody);
   }
 
-  private static boolean evaluate(Condition condition, String requestBody) {
+  private static boolean evaluate(Condition condition, DocumentContext document) {
     if (condition == null
         || condition.field() == null
         || condition.field().isBlank()
@@ -54,10 +66,7 @@ public class ConditionEvaluator {
       return false;
     }
 
-    ArrayNode nodes =
-        JsonPath.using(JSON_PATH_CONFIGURATION)
-            .parse(requestBody)
-            .read("$.".concat(condition.field()));
+    ArrayNode nodes = document.read("$.".concat(condition.field()));
 
     if (nodes.isEmpty()) {
       return false;

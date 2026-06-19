@@ -10,7 +10,6 @@ import io.vertx.core.http.HttpMethod;
 import jakarta.enterprise.event.Observes;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +62,7 @@ public class Runner {
       }
       merged.put(key, endpoint);
     }
-    return new HashSet<>(merged.values());
+    return Set.copyOf(merged.values());
   }
 
   private record EndpointKey(HttpMethod method, String path) {

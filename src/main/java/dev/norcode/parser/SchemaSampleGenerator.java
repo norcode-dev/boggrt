@@ -21,8 +21,9 @@ public class SchemaSampleGenerator {
   private static final JsonNodeFactory NODES = JsonNodeFactory.instance;
   private static final int MAX_DEPTH = 12;
 
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
   private final Faker faker = new Faker();
-  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public JsonNode generate(Schema<?> schema) {
     return generate(schema, 0);
@@ -40,7 +41,7 @@ public class SchemaSampleGenerator {
 
     if (schema.getEnum() != null && !schema.getEnum().isEmpty()) {
       Object first = schema.getEnum().getFirst();
-      return objectMapper.valueToTree(first);
+      return OBJECT_MAPPER.valueToTree(first);
     }
 
     String type = resolveType(schema);
@@ -62,11 +63,11 @@ public class SchemaSampleGenerator {
   private JsonNode userSuppliedValue(Schema<?> schema) {
     Object example = schema.getExample();
     if (example != null) {
-      return objectMapper.valueToTree(example);
+      return OBJECT_MAPPER.valueToTree(example);
     }
     Object defaultValue = schema.getDefault();
     if (defaultValue != null) {
-      return objectMapper.valueToTree(defaultValue);
+      return OBJECT_MAPPER.valueToTree(defaultValue);
     }
     return null;
   }
@@ -159,6 +160,7 @@ public class SchemaSampleGenerator {
     return faker.number().numberBetween(min, max + 1);
   }
 
+  @SuppressWarnings("rawtypes") // Schema.getProperties() returns a raw Map from the Swagger API.
   private ObjectNode generateObject(Schema<?> schema, int depth) {
     ObjectNode node = NODES.objectNode();
     Map<String, Schema> properties = schema.getProperties();
