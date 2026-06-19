@@ -8,12 +8,16 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+// Required so Arc can generate a no-args constructor for the normal-scoped bean proxy.
+@NoArgsConstructor
 @Slf4j
 public abstract class AbstractFileLoader implements ConfigurationLoader {
 
-  protected final AppConfiguration appConfiguration;
+  protected AppConfiguration appConfiguration;
 
   protected AbstractFileLoader(AppConfiguration appConfiguration) {
     this.appConfiguration = appConfiguration;
