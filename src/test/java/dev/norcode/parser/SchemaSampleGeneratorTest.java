@@ -147,6 +147,75 @@ class SchemaSampleGeneratorTest {
   }
 
   @Test
+  void respectsArrayLevelExampleWithMultipleElements() {
+    // An explicit example on the array schema itself is honored verbatim — all of its elements.
+    ArraySchema schema = new ArraySchema();
+    schema.setItems(new StringSchema());
+    schema.setExample(List.of("a", "b", "c"));
+
+    JsonNode node = generator.generate(schema);
+
+    assertTrue(node.isArray());
+    assertEquals(3, node.size());
+    assertEquals("a", node.get(0).asText());
+    assertEquals("b", node.get(1).asText());
+    assertEquals("c", node.get(2).asText());
+  }
+
+  @Test
+  void generatesItemsWhenArrayLevelExampleIsEmpty() {
+    // An empty array example is a placeholder, not a real sample response: the array is generated.
+    ArraySchema schema = new ArraySchema();
+    StringSchema items = new StringSchema();
+    items.setExample("item");
+    schema.setItems(items);
+    schema.setExample(List.of());
+
+    JsonNode node = generator.generate(schema);
+
+    assertTrue(node.isArray());
+    assertTrue(node.size() >= 5 && node.size() <= 8, "expected 5..8 items but was: " + node.size());
+  }
+
+  @Test
+  void respectsArrayOfObjectsExampleWithMultipleElements() {
+    ArraySchema schema = new ArraySchema();
+    ObjectSchema item = new ObjectSchema();
+    item.addProperty("id", new StringSchema());
+    schema.setItems(item);
+    schema.setExample(
+        List.of(java.util.Map.of("id", "first"), java.util.Map.of("id", "second")));
+
+    JsonNode node = generator.generate(schema);
+
+    assertEquals(2, node.size());
+    assertEquals("first", node.get(0).get("id").asText());
+    assertEquals("second", node.get(1).get("id").asText());
+  }
+
+  @Test
+  void respectsPopulatedArrayExampleNestedInObjectExample() {
+    // A wrapper (e.g. a Page envelope) whose object-level example provides a *populated* data array
+    // should honor that array verbatim rather than generating its own items.
+    ObjectSchema wrapper = new ObjectSchema();
+    ArraySchema data = new ArraySchema();
+    ObjectSchema item = new ObjectSchema();
+    item.addProperty("id", new StringSchema());
+    data.setItems(item);
+    wrapper.addProperty("data", data);
+    wrapper.setExample(
+        java.util.Map.of(
+            "data",
+            List.of(java.util.Map.of("id", "x1"), java.util.Map.of("id", "x2"))));
+
+    JsonNode node = generator.generate(wrapper);
+
+    assertEquals(2, node.get("data").size());
+    assertEquals("x1", node.get("data").get(0).get("id").asText());
+    assertEquals("x2", node.get("data").get(1).get("id").asText());
+  }
+
+  @Test
   void fillsArrayPropertyEvenWhenObjectExampleHasEmptyArray() {
     // Mirrors a paginated list response (allOf Page + data): the merged object carries an
     // object-level example whose `data` is empty, but `data` is a real array of items. The empty

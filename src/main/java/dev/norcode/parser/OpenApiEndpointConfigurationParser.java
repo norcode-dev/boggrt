@@ -1,11 +1,13 @@
 package dev.norcode.parser;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.norcode.configuration.EndpointConfiguration;
 import io.smallrye.common.annotation.Identifier;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -33,6 +35,8 @@ public class OpenApiEndpointConfigurationParser implements EndpointConfiguration
 
   private static final Pattern PATH_PARAM = Pattern.compile("\\{([^}]+)}");
   private static final String JSON_MEDIA_TYPE = "application/json";
+
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final SchemaSampleGenerator schemaSampleGenerator;
 
@@ -144,7 +148,21 @@ public class OpenApiEndpointConfigurationParser implements EndpointConfiguration
   }
 
   private String renderResponseBody(ApiResponse response) {
-    Schema<?> schema = extractJsonSchema(response);
+    if (response == null) {
+      return "{}";
+    }
+    MediaType mediaType = findJsonMediaType(response.getContent());
+    if (mediaType == null) {
+      return "{}";
+    }
+    // A media-type-level example is the most explicit, hand-written representation of the response
+    // (e.g. a paged list with its `data` array fully spelled out). Honor it verbatim before falling
+    // back to walking the schema, so we never replace the author's example with generated mocks.
+    JsonNode example = mediaTypeExample(mediaType);
+    if (example != null) {
+      return example.toPrettyString();
+    }
+    Schema<?> schema = mediaType.getSchema();
     if (schema == null) {
       return "{}";
     }
@@ -152,12 +170,23 @@ public class OpenApiEndpointConfigurationParser implements EndpointConfiguration
     return node.toPrettyString();
   }
 
-  private Schema<?> extractJsonSchema(ApiResponse response) {
-    if (response == null) {
-      return null;
+  /**
+   * Extracts an explicit example from the media type, supporting both the singular {@code example}
+   * and the first entry of the plural {@code examples} map. Returns {@code null} when neither is
+   * present.
+   */
+  private JsonNode mediaTypeExample(MediaType mediaType) {
+    if (mediaType.getExample() != null) {
+      return OBJECT_MAPPER.valueToTree(mediaType.getExample());
     }
-    MediaType mediaType = findJsonMediaType(response.getContent());
-    return mediaType != null ? mediaType.getSchema() : null;
+    Map<String, Example> examples = mediaType.getExamples();
+    if (examples != null && !examples.isEmpty()) {
+      Example first = examples.values().iterator().next();
+      if (first != null && first.getValue() != null) {
+        return OBJECT_MAPPER.valueToTree(first.getValue());
+      }
+    }
+    return null;
   }
 
   private MediaType findJsonMediaType(Content content) {

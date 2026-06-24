@@ -50,7 +50,10 @@ public class SchemaSampleGenerator {
 
     if (honorExamples && !objectWithProperties) {
       JsonNode userSupplied = userSuppliedValue(schema);
-      if (userSupplied != null) {
+      // An empty array example (`example: []`) is a placeholder, not a real sample response: fall
+      // through to generation so the array is filled, matching how an empty array nested in an
+      // object example is handled. Non-empty array examples are still emitted verbatim.
+      if (userSupplied != null && !(userSupplied.isArray() && userSupplied.isEmpty())) {
         return userSupplied;
       }
     }
@@ -169,7 +172,8 @@ public class SchemaSampleGenerator {
 
   private int arraySize(Schema<?> schema) {
     if (schema.getMinItems() == null && schema.getMaxItems() == null) {
-      return faker.number().numberBetween(5, 11);
+      // Upper bound is exclusive, so this yields 5..8 inclusive.
+      return faker.number().numberBetween(5, 9);
     }
     int min = schema.getMinItems() != null ? schema.getMinItems() : 1;
     int max = schema.getMaxItems() != null ? schema.getMaxItems() : Math.max(min, 10);
@@ -189,16 +193,20 @@ public class SchemaSampleGenerator {
     if (properties == null || properties.isEmpty()) {
       return node;
     }
-    // When honoring examples, an object-level example supplies values for scalar properties that
-    // have none of their own. Array and object properties are always generated from their schemas
-    // so composed wrappers (e.g. a Page envelope + a `data` array) fill their collections instead of
-    // echoing an empty placeholder array from the example.
+    // When honoring examples, an object-level example supplies values for properties that have none
+    // of their own: scalar leaves are copied straight over, and a populated array example is honored
+    // verbatim (all its elements). Empty placeholder arrays — e.g. a Page envelope's `data: []` — and
+    // object properties are generated from their schemas instead, so composed wrappers fill their
+    // collections rather than echoing the placeholder.
     Map<String, Object> exampleMap = honorExamples ? exampleAsMap(schema.getExample()) : null;
     for (Map.Entry<String, Schema> entry : properties.entrySet()) {
       String name = entry.getKey();
       Schema<?> property = entry.getValue();
       JsonNode value;
-      if (exampleMap != null && exampleMap.containsKey(name) && isScalar(property) && !hasOwnValue(property)) {
+      if (exampleMap != null
+          && exampleMap.containsKey(name)
+          && !hasOwnValue(property)
+          && shouldCopyExample(property, exampleMap.get(name))) {
         value = OBJECT_MAPPER.valueToTree(exampleMap.get(name));
       } else {
         value = generate(property, depth + 1, honorExamples);
@@ -208,10 +216,29 @@ public class SchemaSampleGenerator {
     return node;
   }
 
-  /** A scalar is anything that is not an object or array — i.e. a leaf we can copy from an example. */
-  private boolean isScalar(Schema<?> schema) {
-    String type = resolveType(schema);
-    return type != null && !"object".equals(type) && !"array".equals(type);
+  /**
+   * Decides whether an object-level example value should be copied to a property verbatim rather
+   * than generated. Scalar leaves are always copied; arrays are copied only when the example is
+   * populated (an empty array is treated as a placeholder and generated); objects are always
+   * generated so their own schemas/examples drive the result.
+   */
+  private boolean shouldCopyExample(Schema<?> property, Object exampleValue) {
+    String type = resolveType(property);
+    if (type == null) {
+      return false;
+    }
+    if ("object".equals(type)) {
+      return false;
+    }
+    if ("array".equals(type)) {
+      return isNonEmptyArray(exampleValue);
+    }
+    return true;
+  }
+
+  private boolean isNonEmptyArray(Object value) {
+    JsonNode node = (value instanceof JsonNode jsonNode) ? jsonNode : OBJECT_MAPPER.valueToTree(value);
+    return node != null && node.isArray() && !node.isEmpty();
   }
 
   /** True when the property carries its own example/default, which {@link #generate} already honors. */

@@ -24,6 +24,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pet'
+  /featured-pets:
+    get:
+      summary: Featured pets with an explicit multi-element array example
+      responses:
+        '200':
+          description: A curated list of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+                example:
+                  - id: 7
+                    name: "Rex-the-featured-pet"
+                    status: available
+                  - id: 8
+                    name: "Bella-the-featured-pet"
+                    status: pending
+                  - id: 9
+                    name: "Max-the-featured-pet"
+                    status: sold
+  /paged-pets:
+    get:
+      summary: A paged list whose media-type example lists several pets verbatim
+      responses:
+        '200':
+          description: A page of pets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Pet'
+              example:
+                data:
+                  - id: 1
+                    name: "Alpha-pet"
+                    status: available
+                  - id: 2
+                    name: "Beta-pet"
+                    status: pending
+                  - id: 3
+                    name: "Gamma-pet"
+                    status: sold
+                pagination:
+                  page: 1
+                  pageSize: 25
+                  totalItems: 3
+                  totalPages: 1
   /pets/{petId}:
     get:
       summary: Get a pet by id
@@ -71,6 +126,30 @@ paths:
                     default: "ok"
 components:
   schemas:
+    Page:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            pageSize:
+              type: integer
+            totalItems:
+              type: integer
+            totalPages:
+              type: integer
+      example:
+        data: []
+        pagination:
+          page: 1
+          pageSize: 25
+          totalItems: 137
+          totalPages: 6
     Pet:
       type: object
       required:

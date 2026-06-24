@@ -33,10 +33,12 @@ class OpenApiEndpointConfigurationParserTest {
   void parsesAllOperationsFromFixture() {
     Set<EndpointConfiguration> endpoints = parser.parse(Set.of(FIXTURE.toAbsolutePath()));
 
-    assertEquals(5, endpoints.size());
+    assertEquals(7, endpoints.size());
 
     assertTrue(hasEndpoint(endpoints, HttpMethod.GET, "/pets"));
     assertTrue(hasEndpoint(endpoints, HttpMethod.POST, "/pets"));
+    assertTrue(hasEndpoint(endpoints, HttpMethod.GET, "/featured-pets"));
+    assertTrue(hasEndpoint(endpoints, HttpMethod.GET, "/paged-pets"));
     assertTrue(hasEndpoint(endpoints, HttpMethod.GET, "/pets/:petId"));
     assertTrue(hasEndpoint(endpoints, HttpMethod.GET, "/owners/:ownerId/pets/:petId/notes"));
     assertTrue(hasEndpoint(endpoints, HttpMethod.GET, "/admin/ping"));
@@ -92,6 +94,43 @@ class OpenApiEndpointConfigurationParserTest {
         body.size() >= 5 && body.size() <= 10,
         "expected 5..10 items but was: " + body.size());
     assertEquals(42, body.get(0).get("id").asInt(), "first element should be the example");
+  }
+
+  @Test
+  void responseBodyHonorsMultiElementArrayExample() throws Exception {
+    Set<EndpointConfiguration> endpoints = parser.parse(Set.of(FIXTURE.toAbsolutePath()));
+
+    EndpointConfiguration featured = find(endpoints, HttpMethod.GET, "/featured-pets");
+
+    com.fasterxml.jackson.databind.JsonNode body =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(featured.response());
+
+    assertTrue(body.isArray(), "expected an array body but was: " + featured.response());
+    assertEquals(3, body.size(), "expected exactly the example's 3 elements but was: " + featured.response());
+    assertEquals("Rex-the-featured-pet", body.get(0).get("name").asText());
+    assertEquals("Bella-the-featured-pet", body.get(1).get("name").asText());
+    assertEquals("Max-the-featured-pet", body.get(2).get("name").asText());
+  }
+
+  @Test
+  void responseBodyHonorsMediaTypeExampleVerbatim() throws Exception {
+    // Regression for the Rohire /clients report: the list response carries a media-type-level example
+    // with several fully-specified items. Every element (and the pagination block) must be returned
+    // exactly as written — not just the first, with the rest mocked.
+    Set<EndpointConfiguration> endpoints = parser.parse(Set.of(FIXTURE.toAbsolutePath()));
+
+    EndpointConfiguration paged = find(endpoints, HttpMethod.GET, "/paged-pets");
+
+    com.fasterxml.jackson.databind.JsonNode body =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(paged.response());
+
+    com.fasterxml.jackson.databind.JsonNode data = body.get("data");
+    assertTrue(data.isArray(), "expected a data array but was: " + paged.response());
+    assertEquals(3, data.size(), "expected exactly the example's 3 items but was: " + paged.response());
+    assertEquals("Alpha-pet", data.get(0).get("name").asText());
+    assertEquals("Beta-pet", data.get(1).get("name").asText());
+    assertEquals("Gamma-pet", data.get(2).get("name").asText());
+    assertEquals(3, body.get("pagination").get("totalItems").asInt());
   }
 
   @Test
