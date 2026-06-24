@@ -1,7 +1,6 @@
 package dev.norcode.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -74,6 +73,25 @@ class OpenApiEndpointConfigurationParserTest {
     assertTrue(
         notes.response().contains("fixed-example-value"),
         "expected example value in body but was: " + notes.response());
+  }
+
+  @Test
+  void listResponseIncludesItemExampleOnceAndFillsWithGeneratedItems() throws Exception {
+    Set<EndpointConfiguration> endpoints = parser.parse(Set.of(FIXTURE.toAbsolutePath()));
+
+    EndpointConfiguration listPets = find(endpoints, HttpMethod.GET, "/pets");
+
+    assertTrue(
+        listPets.response().contains("Fido-the-example-pet"),
+        "expected the item example in the array but was: " + listPets.response());
+
+    com.fasterxml.jackson.databind.JsonNode body =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(listPets.response());
+    assertTrue(body.isArray(), "expected an array body but was: " + listPets.response());
+    assertTrue(
+        body.size() >= 5 && body.size() <= 10,
+        "expected 5..10 items but was: " + body.size());
+    assertEquals(42, body.get(0).get("id").asInt(), "first element should be the example");
   }
 
   @Test

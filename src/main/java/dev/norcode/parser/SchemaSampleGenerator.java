@@ -26,17 +26,24 @@ public class SchemaSampleGenerator {
   private final Faker faker = new Faker();
 
   public JsonNode generate(Schema<?> schema) {
-    return generate(schema, 0);
+    return generate(schema, 0, true);
   }
 
-  private JsonNode generate(Schema<?> schema, int depth) {
+  /**
+   * @param honorExamples when {@code true}, an explicit {@code example}/{@code default} on the
+   *     schema is emitted verbatim. When {@code false}, those are ignored so that fresh, varied
+   *     values are generated instead — used to fill array elements beyond the first.
+   */
+  private JsonNode generate(Schema<?> schema, int depth, boolean honorExamples) {
     if (schema == null || depth > MAX_DEPTH) {
       return NODES.nullNode();
     }
 
-    JsonNode userSupplied = userSuppliedValue(schema);
-    if (userSupplied != null) {
-      return userSupplied;
+    if (honorExamples) {
+      JsonNode userSupplied = userSuppliedValue(schema);
+      if (userSupplied != null) {
+        return userSupplied;
+      }
     }
 
     if (schema.getEnum() != null && !schema.getEnum().isEmpty()) {
@@ -54,8 +61,8 @@ public class SchemaSampleGenerator {
       case "integer" -> NODES.numberNode(generateInteger(schema));
       case "number" -> NODES.numberNode(generateNumber(schema));
       case "boolean" -> NODES.booleanNode(faker.bool().bool());
-      case "array" -> generateArray(schema, depth);
-      case "object" -> generateObject(schema, depth);
+      case "array" -> generateArray(schema, depth, honorExamples);
+      case "object" -> generateObject(schema, depth, honorExamples);
       default -> NODES.nullNode();
     };
   }
@@ -138,19 +145,25 @@ public class SchemaSampleGenerator {
     return Math.round((min + faker.random().nextDouble() * range) * 100d) / 100d;
   }
 
-  private ArrayNode generateArray(Schema<?> schema, int depth) {
+  private ArrayNode generateArray(Schema<?> schema, int depth, boolean honorExamples) {
     ArrayNode array = NODES.arrayNode();
     Schema<?> items = schema.getItems();
     int size = arraySize(schema);
     for (int i = 0; i < size; i++) {
-      array.add(generate(items, depth + 1));
+      // Emit the item example verbatim as the first element, then fill the rest with freshly
+      // generated, varied items so the array isn't just the same object repeated.
+      boolean honorThis = honorExamples && i == 0;
+      array.add(generate(items, depth + 1, honorThis));
     }
     return array;
   }
 
   private int arraySize(Schema<?> schema) {
+    if (schema.getMinItems() == null && schema.getMaxItems() == null) {
+      return faker.number().numberBetween(5, 11);
+    }
     int min = schema.getMinItems() != null ? schema.getMinItems() : 1;
-    int max = schema.getMaxItems() != null ? schema.getMaxItems() : Math.max(min, 3);
+    int max = schema.getMaxItems() != null ? schema.getMaxItems() : Math.max(min, 10);
     if (max < min) {
       max = min;
     }
@@ -161,14 +174,14 @@ public class SchemaSampleGenerator {
   }
 
   @SuppressWarnings("rawtypes") // Schema.getProperties() returns a raw Map from the Swagger API.
-  private ObjectNode generateObject(Schema<?> schema, int depth) {
+  private ObjectNode generateObject(Schema<?> schema, int depth, boolean honorExamples) {
     ObjectNode node = NODES.objectNode();
     Map<String, Schema> properties = schema.getProperties();
     if (properties == null || properties.isEmpty()) {
       return node;
     }
     for (Map.Entry<String, Schema> entry : properties.entrySet()) {
-      node.set(entry.getKey(), generate(entry.getValue(), depth + 1));
+      node.set(entry.getKey(), generate(entry.getValue(), depth + 1, honorExamples));
     }
     return node;
   }

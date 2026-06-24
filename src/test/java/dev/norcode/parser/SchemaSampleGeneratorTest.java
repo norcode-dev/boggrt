@@ -115,8 +115,35 @@ class SchemaSampleGeneratorTest {
 
     assertTrue(node.isArray());
     assertEquals(2, node.size());
+    // The first element honors the item example; the rest are freshly generated.
     assertEquals("item", node.get(0).asText());
-    assertEquals("item", node.get(1).asText());
+  }
+
+  @Test
+  void includesItemExampleOnceThenFillsWithGeneratedItems() {
+    ArraySchema schema = new ArraySchema();
+    ObjectSchema items = new ObjectSchema();
+    StringSchema id = new StringSchema();
+    id.setFormat("uuid");
+    items.addProperty("id", id);
+    StringSchema name = new StringSchema();
+    items.addProperty("name", name);
+    items.setExample(java.util.Map.of("id", "fixed-id", "name", "Example"));
+    schema.setItems(items);
+
+    JsonNode node = generator.generate(schema);
+
+    assertTrue(node.isArray());
+    assertTrue(node.size() >= 5 && node.size() <= 10, "expected 5..10 items but was: " + node.size());
+    assertEquals("fixed-id", node.get(0).get("id").asText());
+    boolean someDiffer = false;
+    for (int i = 1; i < node.size(); i++) {
+      if (!"fixed-id".equals(node.get(i).get("id").asText())) {
+        someDiffer = true;
+        break;
+      }
+    }
+    assertTrue(someDiffer, "filler items should differ from the example, but all were identical");
   }
 
   @Test
