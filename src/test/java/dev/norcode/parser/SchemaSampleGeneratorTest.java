@@ -147,6 +147,40 @@ class SchemaSampleGeneratorTest {
   }
 
   @Test
+  void fillsArrayPropertyEvenWhenObjectExampleHasEmptyArray() {
+    // Mirrors a paginated list response (allOf Page + data): the merged object carries an
+    // object-level example whose `data` is empty, but `data` is a real array of items. The empty
+    // example array must not shadow generation.
+    ObjectSchema wrapper = new ObjectSchema();
+
+    ObjectSchema item = new ObjectSchema();
+    StringSchema id = new StringSchema();
+    item.addProperty("id", id);
+    item.setExample(java.util.Map.of("id", "client-1"));
+    ArraySchema data = new ArraySchema();
+    data.setItems(item);
+    wrapper.addProperty("data", data);
+
+    ObjectSchema pagination = new ObjectSchema();
+    IntegerSchema totalItems = new IntegerSchema();
+    pagination.addProperty("totalItems", totalItems);
+    pagination.setExample(java.util.Map.of("totalItems", 137));
+    wrapper.addProperty("pagination", pagination);
+
+    wrapper.setExample(
+        java.util.Map.of("data", java.util.List.of(), "pagination", java.util.Map.of("totalItems", 137)));
+
+    JsonNode node = generator.generate(wrapper);
+
+    assertTrue(node.get("data").isArray());
+    assertTrue(
+        node.get("data").size() >= 5 && node.get("data").size() <= 10,
+        "expected data filled with 5..10 items but was: " + node.get("data").size());
+    assertEquals("client-1", node.get("data").get(0).get("id").asText());
+    assertEquals(137, node.get("pagination").get("totalItems").asInt());
+  }
+
+  @Test
   void generatesObjectWithProperties() {
     ObjectSchema schema = new ObjectSchema();
     StringSchema name = new StringSchema();

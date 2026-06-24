@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,15 @@ public class SchemaSampleGenerator {
       return NODES.nullNode();
     }
 
-    if (honorExamples) {
+    // An object that declares properties is always built field-by-field (see generateObject), even
+    // when it carries an object-level example. Honoring such an example wholesale would emit it
+    // verbatim — including any empty placeholder arrays — and never descend into the properties.
+    // This is what breaks composed list responses (allOf of a Page envelope + a `data` array): the
+    // Page example's `data: []` would shadow the generated items. generateObject spreads the example
+    // across scalar leaves instead, while still generating array/object properties.
+    boolean objectWithProperties = schema.getProperties() != null && !schema.getProperties().isEmpty();
+
+    if (honorExamples && !objectWithProperties) {
       JsonNode userSupplied = userSuppliedValue(schema);
       if (userSupplied != null) {
         return userSupplied;
@@ -180,9 +189,51 @@ public class SchemaSampleGenerator {
     if (properties == null || properties.isEmpty()) {
       return node;
     }
+    // When honoring examples, an object-level example supplies values for scalar properties that
+    // have none of their own. Array and object properties are always generated from their schemas
+    // so composed wrappers (e.g. a Page envelope + a `data` array) fill their collections instead of
+    // echoing an empty placeholder array from the example.
+    Map<String, Object> exampleMap = honorExamples ? exampleAsMap(schema.getExample()) : null;
     for (Map.Entry<String, Schema> entry : properties.entrySet()) {
-      node.set(entry.getKey(), generate(entry.getValue(), depth + 1, honorExamples));
+      String name = entry.getKey();
+      Schema<?> property = entry.getValue();
+      JsonNode value;
+      if (exampleMap != null && exampleMap.containsKey(name) && isScalar(property) && !hasOwnValue(property)) {
+        value = OBJECT_MAPPER.valueToTree(exampleMap.get(name));
+      } else {
+        value = generate(property, depth + 1, honorExamples);
+      }
+      node.set(name, value);
     }
     return node;
+  }
+
+  /** A scalar is anything that is not an object or array — i.e. a leaf we can copy from an example. */
+  private boolean isScalar(Schema<?> schema) {
+    String type = resolveType(schema);
+    return type != null && !"object".equals(type) && !"array".equals(type);
+  }
+
+  /** True when the property carries its own example/default, which {@link #generate} already honors. */
+  private boolean hasOwnValue(Schema<?> schema) {
+    return schema.getExample() != null || schema.getDefault() != null;
+  }
+
+  /**
+   * Normalizes an object-level example to a property map. The example may arrive as a plain {@code
+   * Map} (programmatic schemas) or as a Jackson {@code ObjectNode} (parsed specs), so both are
+   * funneled through Jackson into a uniform map keyed by property name.
+   */
+  private Map<String, Object> exampleAsMap(Object example) {
+    if (example == null) {
+      return null;
+    }
+    JsonNode tree = (example instanceof JsonNode node) ? node : OBJECT_MAPPER.valueToTree(example);
+    if (tree == null || !tree.isObject()) {
+      return null;
+    }
+    Map<String, Object> result = new LinkedHashMap<>();
+    tree.fields().forEachRemaining(field -> result.put(field.getKey(), field.getValue()));
+    return result;
   }
 }
