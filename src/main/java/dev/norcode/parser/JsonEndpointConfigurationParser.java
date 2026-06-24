@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.norcode.configuration.Condition;
 import dev.norcode.configuration.ConditionOperator;
 import dev.norcode.configuration.EndpointConfiguration;
+import io.smallrye.common.annotation.Identifier;
 import io.vertx.core.http.HttpMethod;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
@@ -14,12 +15,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ApplicationScoped
-public class FileEndpointConfigurationParser implements EndpointConfigurationParser<Path> {
+@Identifier("json")
+public class JsonEndpointConfigurationParser implements EndpointConfigurationParser<Path> {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
@@ -63,11 +64,19 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
     List<Condition> conditions = extractConditions(jsonNode);
 
     return new EndpointConfiguration(
-        HttpMethod.valueOf(jsonNode.get("method").asText()),
-        jsonNode.get("path").asText(),
+        HttpMethod.valueOf(requireField(jsonNode, "method").asText()),
+        requireField(jsonNode, "path").asText(),
         conditions,
         extractResponseStatus(jsonNode),
-        jsonNode.get("response").toPrettyString());
+        requireField(jsonNode, "response").toPrettyString());
+  }
+
+  private static JsonNode requireField(JsonNode jsonNode, String field) {
+    JsonNode value = jsonNode.get(field);
+    if (value == null || value.isNull()) {
+      throw new ParserException("Endpoint configuration must have a '" + field + "'");
+    }
+    return value;
   }
 
   private Optional<Integer> extractResponseStatus(JsonNode jsonNode) {
@@ -92,7 +101,7 @@ public class FileEndpointConfigurationParser implements EndpointConfigurationPar
       throw new ParserException("Invalid conditions format. Conditions must be an array.");
     }
 
-    return StreamSupport.stream(jsonNode.get("conditions").spliterator(), false)
+    return jsonNode.get("conditions").valueStream()
         .map(this::parseCondition)
         .collect(Collectors.toList());
   }

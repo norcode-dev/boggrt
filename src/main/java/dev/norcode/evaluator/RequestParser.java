@@ -11,7 +11,7 @@ public class RequestParser {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  static Optional<JsonNode> parseRequestBody(String requestBody) {
+  public static Optional<JsonNode> parseRequestBody(String requestBody) {
     if (requestBody == null || requestBody.isBlank()) {
       return Optional.empty();
     }
