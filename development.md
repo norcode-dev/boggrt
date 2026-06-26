@@ -51,7 +51,12 @@ You can then execute your native executable with: `./target/boggrt-1.0.0-runner`
 
 ## Build the Docker image 
 ```shell script
-docker build -f src/main/docker/Dockerfile.native-micro -t norcodedev/boggrt .
+docker buildx build --platform linux/amd64,linux/arm64 -f src/main/docker/Dockerfile.native-micro -t norcodedev/boggrt .
+```
+
+## Tag the Docker image
+```shell script
+docker tag norcodedev/boggrt norcodedev/boggrt:2.0.0
 ```
 
 ## Running the Docker image

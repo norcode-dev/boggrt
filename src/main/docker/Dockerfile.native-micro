@@ -1,4 +1,5 @@
-FROM ghcr.io/graalvm/native-image-community:25 AS build
+FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25 AS build
+USER root
 WORKDIR /work/
 COPY .mvn /work/.mvn
 COPY mvnw /work/
